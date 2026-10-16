@@ -7,3 +7,6 @@ export const firebaseConfig = {
   messagingSenderId: "847233017895",
   appId: "1:847233017895:web:010d7748a4750db9b84602"
 };
+
+// Address of your Cloudflare Worker that safely talks to Gemini.
+export const aiUrl = "https://organizechurc-ai.davidblessing979.workers.dev";

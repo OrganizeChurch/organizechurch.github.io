@@ -2,7 +2,7 @@
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import{getAuth,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import{getFirestore,collection,doc,getDocs,getDoc,setDoc,addDoc,deleteDoc,query,where}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import{firebaseConfig}from'./firebase-config.js';
+import{firebaseConfig,aiUrl}from'./firebase-config.js';
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let user=null,timer=null,msg='';
@@ -75,4 +75,30 @@ onAuthStateChanged(auth,async u=>{
   user=u;
   try{await loadAll();await loadMine()}catch(e){msg='Could not load data ('+(e.code||e.message)+')';console.error(e)}
   route();
+});
+
+// Christ-centred AI: asks the Cloudflare Worker (signed-in users only).
+window.askAI=async()=>{
+  const qEl=document.getElementById('aq'),o=document.getElementById('ao'),q=qEl?qEl.value.trim():'';
+  if(!q)return;
+  if(!user){o.textContent='Please sign in with Google first (tap Sign in at the top), then ask again.';return}
+  o.textContent='Thinking\u2026';
+  try{
+    const tok=await auth.currentUser.getIdToken();
+    const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q})});
+    const d=await r.json();
+    o.textContent=d.text||d.error||'Sorry, no answer came back.';
+  }catch(e){o.textContent='Could not reach the assistant. Please check your internet and try again.'}
+};
+
+// Make the website installable like an app.
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+let dip=null;
+addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();dip=e;
+  const b=document.createElement('button');
+  b.textContent='\ud83d\udcf2 Install app';
+  b.style.cssText='position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));right:14px;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+  b.onclick=async()=>{dip.prompt();await dip.userChoice;b.remove()};
+  document.body.appendChild(b);
 });
