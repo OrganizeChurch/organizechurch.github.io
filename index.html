@@ -79,7 +79,7 @@ return a.length?a.map(x=>`<div class="item"><h3>${x.pin?'📌 ':''}${esc(x.t)}</
 function libList(c,pubOnly){const l=c.lib.filter(x=>!pubOnly||x.vis==='public');
 return l.length?l.map(x=>`<details class="item"><summary><b>${esc(x.t)}</b> <span class="tag">${esc(x.ty)}</span> <span class="tag">${x.vis==='public'?'Public':'Members only'}</span></summary><pre style="white-space:pre-wrap;font:inherit;margin:.5rem 0">${esc(x.txt)}</pre></details>`).join(''):'<p class="mut">Nothing published yet.</p>'}
 function home(q=''){const l=S.churches.filter(c=>c.listed&&(c.name+c.city).toLowerCase().includes(q.toLowerCase()));
-return`<section class="hero"><h1>Less paperwork. More time for ministry.</h1><p>Bring your people, programmes, communication and church memories together in one organised digital space.</p>
+return`<section class="hero"><h1>Your Creative &amp; Admin Assistant</h1><p>Design, document and develop in a Kingdom-styled digital space. Flyers, announcements, sermons, attendance and more, all in one place.</p>
 <div class="row"><a class="btn" href="#/register">Register your church</a><a class="btn sec" href="#/bible">📖 Read the Bible</a><a class="btn sec" href="#/login">Sign in</a></div><div class="chips"><span>📖 Programmes</span><span>📸 Photonemory</span><span>📣 Announcements</span><span>👥 Members</span></div></section>
 <div class="card"><h2>Find a church</h2><label for="q">Search by name or city</label><input id="q" type="search" value="${esc(q)}" data-a="search" autocomplete="off">
 <div class="grid" id="dir" style="margin-top:.8rem">${dirHtml(l)}</div></div>
