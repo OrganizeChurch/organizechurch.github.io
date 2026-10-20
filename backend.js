@@ -8,8 +8,10 @@ import{firebaseConfig,aiUrl}from'./firebase-config.js';
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let user=null,timer=null,msg='';
-const LOCAL=['photos','pics','welcome','uploads']; // media stays on this device until milestone 2 (Firebase Storage)
-const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[]});
+const LOCAL=['photos','pics','welcome','uploads'];
+const CELSYNC={}; // church id -> {docId: json} last synced celebrants
+const CELSEEN=new Set(); // media stays on this device until milestone 2 (Firebase Storage)
+const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[],cel:[]});
 
 const pubOf=c=>({id:c.id,name:c.name||'',city:c.city||'',about:c.about||'',mission:c.mission||'',times:c.times||'',contact:c.contact||'',give:c.give||'',listed:!!c.listed,ownerUid:user.uid,
   welcome:(c.welcome||[]).filter(x=>x.type==='embed'),ann:(c.ann||[]).filter(x=>x.pub),lib:(c.lib||[]).filter(x=>x.vis==='public')});
@@ -18,7 +20,20 @@ const privOf=c=>({ownerUid:user.uid,members:c.members||[],att:c.att||[],ann:c.an
 async function loadAll(){
   const old=Object.fromEntries(S.churches.map(c=>[c.id,c]));
   const s=await getDocs(collection(db,'churches'));
-  S.churches=s.docs.map(d=>{const o={...blank(),...d.data()};LOCAL.forEach(k=>{o[k]=(old[d.id]&&old[d.id][k])||[]});o.welcome=[...(d.data().welcome||[]),...(((old[d.id]&&old[d.id].welcome)||[]).filter(x=>x.type!=='embed'))];return o});
+  S.churches=s.docs.map(d=>{const o={...blank(),...d.data()};LOCAL.forEach(k=>{o[k]=(old[d.id]&&old[d.id][k])||[]});o.cel=(old[d.id]&&old[d.id].cel)||[];o.welcome=[...(d.data().welcome||[]),...(((old[d.id]&&old[d.id].welcome)||[]).filter(x=>x.type!=='embed'))];return o});
+}
+async function loadCel(id){
+  const g=await getDocs(collection(db,'churches',id,'celebrants'));
+  const c=ch(id);if(!c)return;
+  c.cel=g.docs.map(d=>({id:d.id,...d.data()}));
+  CELSYNC[id]=Object.fromEntries(c.cel.map(x=>[x.id,JSON.stringify(x)]));
+}
+async function pushCel(c){
+  const prev=CELSYNC[c.id]||{}; // if never loaded, only add/update (never delete blindly)
+  const now=Object.fromEntries((c.cel||[]).map(x=>[x.id,JSON.stringify(x)]));
+  for(const k in now)if(prev[k]!==now[k]){const{id,...rest}=JSON.parse(now[k]);await setDoc(doc(db,'churches',c.id,'celebrants',k),rest)}
+  for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants',k));
+  CELSYNC[c.id]=now;
 }
 async function loadMine(){
   S.session=null;if(!user)return;
@@ -29,12 +44,14 @@ async function loadMine(){
   if(p.exists())Object.assign(c,p.data());
   const ib=await getDocs(collection(db,'churches',id,'inbox'));
   c.inbox=ib.docs.map(d=>({id:d.id,...d.data()}));
+  try{await loadCel(id)}catch(e){console.error(e)}
 }
 async function push(){
   const c=user&&me();if(!c)return;
   try{
     await setDoc(doc(db,'churches',c.id),pubOf(c));
     await setDoc(doc(db,'churches',c.id,'private','data'),privOf(c));
+    await pushCel(c);
   }catch(e){msg='Could not save: '+e.code;console.error(e)}
 }
 
@@ -125,9 +142,18 @@ window.askAI=async()=>{
   o.textContent='Thinking\u2026 \u2728';
   try{
     const tok=await auth.currentUser.getIdToken();
-    const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q})});
+    const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q,stream:true})});
+    const clean=t=>t.replace(/\*\*/g,'').replace(/^#+\s*/gm,'');
+    if((r.headers.get('content-type')||'').includes('text/plain')&&r.body){
+      const rd=r.body.getReader(),dc=new TextDecoder();let raw='';
+      for(;;){const{done,value}=await rd.read();if(done)break;raw+=dc.decode(value,{stream:true});o.textContent=clean(raw)}
+      raw=clean(raw).trim();
+      if(!raw){o.textContent='Sorry, no answer came back. Please try again.';return}
+      const a=hGet();a.unshift({q,a:raw,t:new Date().toLocaleString()});hSet(a);histRender();
+      return;
+    }
     const d=await r.json();
-    const ans=(d.text||d.error||'Sorry, no answer came back.').replace(/\*\*/g,'').replace(/^#+\s*/gm,'');
+    const ans=clean(d.text||d.error||'Sorry, no answer came back.');
     o.textContent=ans;
     if(d.text){const a=hGet();a.unshift({q,a:ans,t:new Date().toLocaleString()});hSet(a);histRender()}
   }catch(e){o.textContent='Could not reach the assistant. Please check your internet and try again.'}
@@ -231,7 +257,7 @@ document.addEventListener('click',async e=>{
 const _hdr=window.header;
 window.header=function(){_hdr();const h=document.getElementById('hd');if(h&&!h.querySelector('[data-fl]'))h.insertAdjacentHTML('beforeend','<a class="btn sec sm" data-fl href="#/flyer">\ud83c\udfa8 Flyer</a>')};
 const _rt=window.route;
-const after=()=>{if(location.hash.startsWith('#/flyer'))flyerPage();else if(location.hash.startsWith('#/ai'))aiExtras()};
+const after=()=>{const m=location.hash.match(/^#\/c\/([^/]+)/);if(m&&!CELSEEN.has(m[1])&&S.churches.length){CELSEEN.add(m[1]);loadCel(m[1]).then(()=>{if(location.hash.startsWith('#/c/'+m[1]))_rt()}).catch(e=>console.error(e))}if(location.hash.startsWith('#/flyer'))flyerPage();else if(location.hash.startsWith('#/ai'))aiExtras()};
 window.route=function(){_rt();after()};
 addEventListener('hashchange',()=>setTimeout(after,0));
 
