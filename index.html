@@ -90,8 +90,8 @@ return`<div class="card"><h1>${esc(c.name)}</h1><div class="mut">${esc(c.city)} 
 <div class="card"><h2>Announcements</h2>${annList(c,true)}</div><div class="card"><h2>Programmes & resources</h2>${libList(c,true)}</div>
 <div class="card"><h2>✉️ Message this church</h2><form data-f="msg"><input type="hidden" name="cid" value="${c.id}"><label for="mnm">Your name</label><input id="mnm" name="n" required><label for="mms">Message</label><textarea id="mms" name="m" rows="3" required></textarea><p><button>Send message</button></p></form></div><div class="card"><h2>Photonemory</h2>${c.photos.length?`<div class="photos">${c.photos.map(p=>`<figure style="margin:0"><img src="${p.src}" alt="${esc(p.cap)}"><figcaption class="mut">${esc(p.cap)}</figcaption></figure>`).join('')}</div>`:'<p class="mut">No photos yet.</p>'}</div>`}
 function login(){return`<div class="card"><h1>Sign in</h1>
-<div class="row"><button class="sec" disabled>Continue with Google</button><button class="sec" disabled>Continue with Facebook</button></div>
-<p class="note">Google and Facebook sign-in switch on when the real backend is connected (next phase). For now, choose a church below to try the admin tools.</p>
+<div class="row"><button class="sec" disabled>Continue with Google</button></div>
+<p class="note">Google sign-in switches on when the real backend is connected (next phase). For now, choose a church below to try the admin tools.</p>
 <label for="ls">Try as admin of</label><select id="ls">${S.churches.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
 <p><button data-a="demo">Open admin tools</button></p></div>`}
 function register(){return`<div class="card"><h1>Register your church</h1><form data-f="reg">
