@@ -1,3 +1,5 @@
+import{mountStudio,FONT_CSS}from'./studio.js';
+import{renderFlyer,SIZES as FLSIZES,THEMES as FLTHEMES,DEFAULTS as FLDEF}from'./flyer-design.js';
 // OrganizeChurch backend layer, milestone 1: Google/Facebook sign-in, shared churches, private church data.
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import{getAuth,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -120,76 +122,99 @@ window.askAI=async()=>{
   }catch(e){o.textContent='Could not reach the assistant. Please check your internet and try again.'}
 };
 
-// ---------- Flyer maker: your own photo and logo, or AI artwork; saved at 2160 x 2700 ----------
-const FL={t:'Sunday Service',d:'Sunday \u2022 9:00 AM',p:'',m:'You are welcome! Come as you are.',s:'Blue',a:'',o:'40'};
-let FLIMG=null,FLLOGO=null;
-const THEMES={Blue:['#1D4ED8','#38BDF8','#FFFFFF','#FDE68A'],Gold:['#92400E','#F59E0B','#FFFFFF','#FEF3C7'],Green:['#065F46','#10B981','#FFFFFF','#D1FAE5'],Purple:['#5B21B6','#A78BFA','#FFFFFF','#EDE9FE']};
-function flWrap(x,t,px,py,maxW,lh){
-  const words=String(t).split(/\s+/);let line='';
-  for(const w of words){const test=line+w+' ';if(x.measureText(test).width>maxW&&line){x.fillText(line.trim(),px,py);line=w+' ';py+=lh}else line=test}
-  x.fillText(line.trim(),px,py);return py+lh;
+// ---------- Flyer designer: professional church flyers, saved at 2x resolution ----------
+const FLK=['size','theme','photoShape','org','invite','title','sub','theme_','scripture','date','venue','time','guest','role','closing','contact'];
+let FL={...FLDEF};
+try{const sv=JSON.parse(localStorage.getItem('oc_fl')||'null');if(sv)FL={...FL,...sv}}catch(e){}
+const FLI={photo:null,logo1:null,logo2:null,bg:null};
+(function(){
+  if(document.getElementById('fl-fonts'))return;
+  const l=document.createElement('link');l.id='fl-fonts';l.rel='stylesheet';
+  l.href=FONT_CSS;
+  document.head.appendChild(l);
+})();
+function flFonts(){
+  if(!document.fonts||!document.fonts.load)return Promise.resolve();
+  return Promise.all(['900 40px Cinzel','700 40px Cinzel','40px "Great Vibes"','700 20px Montserrat','800 20px Montserrat'].map(f=>document.fonts.load(f,'ABC abc 123'))).catch(()=>{});
 }
 function flDraw(){
   const c=document.getElementById('fl-c');if(!c)return;
-  const x=c.getContext('2d'),W=1080,H=1350,T=THEMES[FL.s]||THEMES.Blue;
-  x.setTransform(2,0,0,2,0,0);x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.shadowBlur=0;
-  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,T[0]);g.addColorStop(1,T[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
-  if(FLIMG){
-    const k=Math.max(W/FLIMG.width,H/FLIMG.height),w=FLIMG.width*k,h=FLIMG.height*k;
-    x.drawImage(FLIMG,(W-w)/2,(H-h)/2,w,h);x.fillStyle='rgba(0,0,0,'+(Number(FL.o)/100)+')';x.fillRect(0,0,W,H);
-  }else{
-    x.fillStyle='rgba(255,255,255,.12)';x.beginPath();x.arc(W-120,160,220,0,7);x.fill();x.beginPath();x.arc(90,H-140,260,0,7);x.fill();
-  }
-  let cy=120;
-  if(FLLOGO){const mw=Math.min(520,FLLOGO.width*170/FLLOGO.height),hh=mw*FLLOGO.height/FLLOGO.width;x.drawImage(FLLOGO,(W-mw)/2,50,mw,hh);cy=50+hh+70}
-  x.textAlign='center';x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=14;
-  let church='';try{church=(me()&&me().name)||''}catch(e){}
-  x.fillStyle=T[3];x.font='700 44px system-ui,sans-serif';x.fillText((church||'YOUR CHURCH').toUpperCase(),W/2,cy);
-  x.fillStyle=T[2];x.font='900 112px system-ui,sans-serif';
-  let y=flWrap(x,FL.t||'Your event',W/2,Math.max(430,cy+250),W-160,130);
-  x.fillStyle=T[3];x.font='700 58px system-ui,sans-serif';y=flWrap(x,FL.d||'',W/2,y+40,W-160,72);
-  if(FL.p){x.fillStyle=T[2];x.font='600 50px system-ui,sans-serif';y=flWrap(x,'\ud83d\udccd '+FL.p,W/2,y+10,W-160,64)}
-  if(FL.m){x.fillStyle=T[2];x.font='italic 500 46px system-ui,sans-serif';flWrap(x,FL.m,W/2,Math.max(y+50,1000),W-200,60)}
-  x.shadowBlur=0;x.fillStyle='rgba(255,255,255,.8)';x.font='500 30px system-ui,sans-serif';x.fillText('Made with OrganizeChurch',W/2,H-50);
+  const dims=FLSIZES[FL.size]||FLSIZES.Portrait;
+  if(c.width!==dims[0]*2||c.height!==dims[1]*2){c.width=dims[0]*2;c.height=dims[1]*2}
+  const x=c.getContext('2d');x.setTransform(2,0,0,2,0,0);x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+  try{renderFlyer(x,FL,FLI)}catch(e){console.error(e)}
+  try{const o={};FLK.forEach(k=>o[k]=FL[k]);localStorage.setItem('oc_fl',JSON.stringify(o))}catch(e){}
+}
+function classicPage(){
+  const app=document.getElementById('fl-body');if(!app)return;
+  const fld=(k,lab,ph,area)=>`<label for="fl-${k}">${lab}</label>`+(area?`<textarea id="fl-${k}" rows="${area}" placeholder="${ph||''}"></textarea>`:`<input id="fl-${k}" placeholder="${ph||''}">`);
+  const sel=(k,lab,opts)=>`<label for="fl-${k}">${lab}</label><select id="fl-${k}">${opts.map(o=>`<option>${o}</option>`).join('')}</select>`;
+  app.innerHTML=`<div class="card"><h1>📜 Formal invitation</h1><p class="mut">Type your details and the flyer designs itself. Add your photo and logos, pick a colour style, then download.</p>
+<details open><summary><b>1. Style</b></summary>${sel('size','Shape',Object.keys(FLSIZES))}${sel('theme','Colour style',Object.keys(FLTHEMES))}${sel('photoShape','Photo frame',['Arch','Rounded','Circle','None'])}</details>
+<details open><summary><b>2. Top of flyer</b></summary>${fld('org','Organisation lines (one per line)','',4)}${fld('invite','Invitation line (script)','e.g. Joyfully Invites You to')}</details>
+<details open><summary><b>3. Main title</b></summary>${fld('title','Big title','e.g. 10th Annual Conference')}${fld('sub','Small word under title (optional)','e.g. CONFERENCE')}${fld('theme_','Theme (optional)','')}${fld('scripture','Bible reference (optional)','e.g. Genesis 6:22')}</details>
+<details open><summary><b>4. Date, venue and time</b></summary>${fld('date','Date','')}${fld('venue','Venue','')}${fld('time','Time','')}${fld('contact','Phone or contact (optional)','')}</details>
+<details open><summary><b>5. Guest or speaker</b></summary>${fld('guest','Name','')}${fld('role','Title lines (one per line)','',2)}${fld('closing','Closing line (script)','')}</details>
+<details open><summary><b>6. Pictures</b></summary>
+<label for="fl-pf">Photo of guest or speaker</label><input id="fl-pf" type="file" accept="image/*">
+<label for="fl-l1">Logo (left)</label><input id="fl-l1" type="file" accept="image/*">
+<label for="fl-l2">Logo (right, optional)</label><input id="fl-l2" type="file" accept="image/*">
+<label for="fl-bf">Background picture (optional)</label><input id="fl-bf" type="file" accept="image/*">
+<label for="fl-ai">Or describe AI background art</label><input id="fl-ai" placeholder="e.g. soft golden light over a church, peaceful">
+<p class="row"><button id="fl-art">✨ Make AI background</button><button class="sec sm" id="fl-clr">Remove pictures</button><button class="sec sm" id="fl-blank">Clear all text</button></p></details>
+<p class="row"><button id="fl-dl">⬇️ Download flyer (PNG)</button><button class="sec" id="fl-sh">📤 Share</button></p>
+<p id="fl-note" class="mut" role="status">Saved at double size, sharp for WhatsApp, social media and printing.</p>
+<canvas id="fl-c" style="width:100%;height:auto;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.25)"></canvas></div>`;
+  FLK.forEach(k=>{const e=document.getElementById('fl-'+k);if(e)e.value=FL[k]||''});
+  flDraw();flFonts().then(flDraw);
+}
+let FLTAB='studio';
+async function makeArt(prompt){
+  if(!auth.currentUser)throw new Error('Please sign in with Google first (tap Sign in at the top) to make AI art.');
+  const tok=await auth.currentUser.getIdToken();
+  const r=await fetch(aiUrl+'/image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({prompt})});
+  const d=await r.json();
+  if(!d.image)throw new Error(d.error||'The art maker could not draw right now.');
+  return d.image;
 }
 function flyerPage(){
   const app=document.getElementById('app');if(!app)return;
-  app.innerHTML=`<div class="card"><h1>\ud83c\udfa8 Flyer maker</h1><p class="mut">Add your own photo or logo, type your details, then download a high-quality flyer.</p>
-<label for="fl-t">Event title</label><input id="fl-t"><label for="fl-d">Date and time</label><input id="fl-d"><label for="fl-p">Place</label><input id="fl-p"><label for="fl-m">Short message</label><textarea id="fl-m" rows="2"></textarea>
-<label for="fl-s">Colour style</label><select id="fl-s">${Object.keys(THEMES).map(k=>`<option>${k}</option>`).join('')}</select>
-<label for="fl-bg">Your photo (background)</label><input id="fl-bg" type="file" accept="image/*">
-<label for="fl-logo">Your logo (optional)</label><input id="fl-logo" type="file" accept="image/*">
-<label for="fl-o">Darken the photo so words are easy to read</label><input id="fl-o" type="range" min="0" max="70">
-<label for="fl-a">Or describe AI artwork (optional)</label><input id="fl-a" placeholder="e.g. golden sunrise over hills, joyful worship">
-<p class="row"><button id="fl-art">\u2728 Make AI artwork</button><button class="sec sm" id="fl-clr">Remove photo</button><button class="sec sm" id="fl-clrl">Remove logo</button></p>
-<p class="row"><button id="fl-dl">\u2b07\ufe0f Download flyer (PNG)</button></p>
-<p id="fl-note" class="mut" role="status">Your flyer is saved at 2160 \u00d7 2700 pixels, good for printing and sharing.</p>
-<canvas id="fl-c" width="2160" height="2700" style="width:100%;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.25)"></canvas></div>`;
-  for(const k of ['t','d','p','m','s','a','o']){const e=document.getElementById('fl-'+k);if(e)e.value=FL[k]}
-  flDraw();
+  app.innerHTML=`<div class="row" style="margin-bottom:8px"><button id="fl-tab-s" class="${FLTAB==='studio'?'':'sec'}">\ud83c\udfa8 Creative Studio</button><button id="fl-tab-c" class="${FLTAB==='classic'?'':'sec'}">\ud83d\udcdc Formal invitation</button></div><div id="fl-body"></div>`;
+  if(FLTAB==='studio')mountStudio(document.getElementById('fl-body'),{makeImage:makeArt});else classicPage();
 }
+document.addEventListener('click',e=>{
+  const id=e.target&&e.target.id;
+  if(id==='fl-tab-s'||id==='fl-tab-c'){FLTAB=id==='fl-tab-s'?'studio':'classic';flyerPage()}
+});
 function flLoad(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>cb(im);im.src=r.result};r.readAsDataURL(file)}
-document.addEventListener('input',e=>{const id=e.target&&e.target.id;if(id&&id.startsWith('fl-')&&id.length===4){FL[id.slice(3)]=e.target.value;flDraw()}});
+document.addEventListener('input',e=>{const id=e.target&&e.target.id;if(id&&id.startsWith('fl-')&&FLK.includes(id.slice(3))){FL[id.slice(3)]=e.target.value;flDraw()}});
 document.addEventListener('change',e=>{
   const id=e.target&&e.target.id;
-  if((id==='fl-bg'||id==='fl-logo')&&e.target.files&&e.target.files[0])flLoad(e.target.files[0],im=>{if(id==='fl-bg')FLIMG=im;else FLLOGO=im;flDraw()});
+  if(id&&id.startsWith('fl-')&&FLK.includes(id.slice(3))){FL[id.slice(3)]=e.target.value;flDraw();return}
+  const map={'fl-pf':'photo','fl-l1':'logo1','fl-l2':'logo2','fl-bf':'bg'};
+  if(map[id]&&e.target.files&&e.target.files[0])flLoad(e.target.files[0],im=>{FLI[map[id]]=im;flDraw()});
 });
 document.addEventListener('click',async e=>{
   const id=e.target&&e.target.id,note=document.getElementById('fl-note');
-  if(id==='fl-clr'){FLIMG=null;flDraw()}
-  else if(id==='fl-clrl'){FLLOGO=null;flDraw()}
+  if(id==='fl-clr'){FLI.photo=FLI.logo1=FLI.logo2=FLI.bg=null;flDraw()}
+  else if(id==='fl-blank'){FLK.forEach(k=>{if(k!=='size'&&k!=='theme'&&k!=='photoShape'){FL[k]='';const el=document.getElementById('fl-'+k);if(el)el.value=''}});flDraw()}
   else if(id==='fl-dl'){
-    document.getElementById('fl-c').toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='flyer.png';a.click()},'image/png');
+    document.getElementById('fl-c').toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='flyer.png';a.click();if(note)note.textContent='Saved to your Downloads ✅'},'image/png');
+  }else if(id==='fl-sh'){
+    document.getElementById('fl-c').toBlob(async bl=>{
+      const f=new File([bl],'flyer.png',{type:'image/png'});
+      try{if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Flyer'});else if(note)note.textContent='Sharing is not available here. Use Download instead.'}catch(x){}
+    },'image/png');
   }else if(id==='fl-art'){
-    if(!user){note.textContent='Please sign in with Google first (tap Sign in at the top) to make AI artwork.';return}
-    note.textContent='Painting your artwork\u2026 this can take about 15 seconds \u2728';
+    if(!auth.currentUser){note.textContent='Please sign in with Google first (tap Sign in at the top) to make AI art.';return}
+    note.textContent='Painting your background… this can take about 15 seconds ✨';
     try{
       const tok=await auth.currentUser.getIdToken();
-      const r=await fetch(aiUrl+'/image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({prompt:FL.a||FL.t})});
+      const r=await fetch(aiUrl+'/image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({prompt:(document.getElementById('fl-ai').value||FL.title||'church worship light')+', soft, elegant, no text'})});
       const d=await r.json();
-      if(!d.image){note.textContent=d.error||'The artwork maker could not draw right now.';return}
-      const im=new Image();im.onload=()=>{FLIMG=im;flDraw();note.textContent='Artwork added! Change the text or tap Download.'};im.src=d.image;
-    }catch(x){note.textContent='Could not reach the artwork maker. Check your internet and try again.'}
+      if(!d.image){note.textContent=d.error||'The art maker could not draw right now.';return}
+      const im=new Image();im.onload=()=>{FLI.bg=im;flDraw();note.textContent='Background added!'};im.src=d.image;
+    }catch(x){note.textContent='Could not reach the art maker. Check your internet and try again.'}
   }
 });
 const _hdr=window.header;
