@@ -56,7 +56,7 @@ const nice=c=>({
 }[c]);
 window.login=()=>`<div class="card"><h1>Sign in</h1>${IN_APP&&!user?'<p class="note" role="alert"><b>Important:</b> you opened this inside another app (such as WhatsApp or Facebook). Google does not allow sign-in there. Tap the <b>\u22ee</b> or <b>Share</b> button at the top and choose <b>Open in Chrome</b> (or Safari), then sign in.</p>':''}${user
   ?`<p>Signed in as <b>${esc(user.displayName||user.email||'you')}</b>.</p>${S.session?'<a class="btn" href="#/admin/home">Open my church</a>':'<a class="btn" href="#/register">Register your church</a>'}`
-  :`<div class="row"><button data-b="google">Continue with Google</button><button class="sec" data-b="facebook">Continue with Facebook</button></div>`}
+  :`<div class="row"><button data-b="google">Continue with Google</button></div>`}
 <p class="note" role="status">${esc(msg||'Sign in to register or manage your church.')}</p></div>`;
 
 // Normal download link now that the page is on its own hosting.
