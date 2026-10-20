@@ -12,13 +12,13 @@ const LOCAL=['photos','pics','welcome','uploads']; // media stays on this device
 const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[]});
 
 const pubOf=c=>({id:c.id,name:c.name||'',city:c.city||'',about:c.about||'',mission:c.mission||'',times:c.times||'',contact:c.contact||'',give:c.give||'',listed:!!c.listed,ownerUid:user.uid,
-  ann:(c.ann||[]).filter(x=>x.pub),lib:(c.lib||[]).filter(x=>x.vis==='public')});
+  welcome:(c.welcome||[]).filter(x=>x.type==='embed'),ann:(c.ann||[]).filter(x=>x.pub),lib:(c.lib||[]).filter(x=>x.vis==='public')});
 const privOf=c=>({ownerUid:user.uid,members:c.members||[],att:c.att||[],ann:c.ann||[],lib:c.lib||[],prayer:c.prayer||[],chat:c.chat||[]});
 
 async function loadAll(){
   const old=Object.fromEntries(S.churches.map(c=>[c.id,c]));
   const s=await getDocs(collection(db,'churches'));
-  S.churches=s.docs.map(d=>{const o={...blank(),...d.data()};LOCAL.forEach(k=>{o[k]=(old[d.id]&&old[d.id][k])||[]});return o});
+  S.churches=s.docs.map(d=>{const o={...blank(),...d.data()};LOCAL.forEach(k=>{o[k]=(old[d.id]&&old[d.id][k])||[]});o.welcome=[...(d.data().welcome||[]),...(((old[d.id]&&old[d.id].welcome)||[]).filter(x=>x.type!=='embed'))];return o});
 }
 async function loadMine(){
   S.session=null;if(!user)return;
@@ -43,7 +43,18 @@ const _save=window.save;
 window.save=function(){_save();clearTimeout(timer);timer=setTimeout(push,700)};
 
 // Real sign-in page replaces the demo one.
-window.login=()=>`<div class="card"><h1>Sign in</h1>${user
+const IN_APP=/FBAN|FBAV|FB_IAB|Instagram|WhatsApp|MicroMessenger|Snapchat|TikTok|BytedanceWebview|Line\/|; wv\)/i.test(navigator.userAgent);
+const nice=c=>({
+  'auth/popup-blocked':'Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.',
+  'auth/network-request-failed':'The internet is weak or off. Please check your connection and try again.',
+  'auth/unauthorized-domain':'This web address is not allowed yet. The church owner needs to add it in Firebase.',
+  'auth/operation-not-supported-in-this-environment':'This browser cannot sign in here. Please open the link in Chrome (or Safari on iPhone).',
+  'auth/web-storage-unsupported':'Please turn on cookies and site data for this browser, or open the link in Chrome.',
+  'auth/cancelled-popup-request':'',
+  'permission-denied':'The server refused the request. Please sign out, sign in again, and try once more.',
+  'unavailable':'Could not reach the server. Please check your internet and try again.'
+}[c]);
+window.login=()=>`<div class="card"><h1>Sign in</h1>${IN_APP&&!user?'<p class="note" role="alert"><b>Important:</b> you opened this inside another app (such as WhatsApp or Facebook). Google does not allow sign-in there. Tap the <b>\u22ee</b> or <b>Share</b> button at the top and choose <b>Open in Chrome</b> (or Safari), then sign in.</p>':''}${user
   ?`<p>Signed in as <b>${esc(user.displayName||user.email||'you')}</b>.</p>${S.session?'<a class="btn" href="#/admin/home">Open my church</a>':'<a class="btn" href="#/register">Register your church</a>'}`
   :`<div class="row"><button data-b="google">Continue with Google</button><button class="sec" data-b="facebook">Continue with Facebook</button></div>`}
 <p class="note" role="status">${esc(msg||'Sign in to register or manage your church.')}</p></div>`;
@@ -55,7 +66,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-b],[data-a]');if(!b)return;
   if(b.dataset.b){
     try{await signInWithPopup(auth,b.dataset.b==='google'?new GoogleAuthProvider():new FacebookAuthProvider());msg=''}
-    catch(x){msg=x.code==='auth/popup-closed-by-user'?'':'Sign-in failed ('+x.code+')';route()}
+    catch(x){const n=nice(x.code);msg=x.code==='auth/popup-closed-by-user'?'':(n!==undefined?n:'Sign-in failed')+(n===''?'':' ['+x.code+']');route()}
   }else if(b.dataset.a==='out'){signOut(auth)}
   else if(b.dataset.a==='delmsg'&&user&&S.session){deleteDoc(doc(db,'churches',S.session,'inbox',b.dataset.id)).catch(()=>{})}
 },true);
@@ -75,7 +86,7 @@ document.addEventListener('submit',async e=>{
 
 onAuthStateChanged(auth,async u=>{
   user=u;
-  try{await loadAll();await loadMine()}catch(e){msg='Could not load data ('+(e.code||e.message)+')';console.error(e)}
+  try{await loadAll();await loadMine()}catch(e){msg=(nice(e.code)||'Could not load data')+' ['+(e.code||e.message)+']';console.error(e)}
   route();
 });
 
