@@ -29,6 +29,10 @@ function shapePath(c,kind,w,h,l){
   else rr(c,-w/2,-h/2,w,h,0);
 }
 function cover(c,im,x,y,w,h,o){
+  if(o.fit==='contain'){
+    const z0=o.zoom||1,fx0=o.fx==null?.5:o.fx,fy0=o.fy==null?.5:o.fy,k0=Math.min(w/im.width,h/im.height)*z0,dw=im.width*k0,dh=im.height*k0;
+    c.drawImage(im,x+(dw>w?(w-dw)*fx0:(w-dw)/2),y+(dh>h?(h-dh)*fy0:(h-dh)/2),dw,dh);return;
+  }
   const z=o.zoom||1,k=Math.max(w/im.width,h/im.height)*z,sw=w/k,sh=h/k,fx=o.fx==null?.5:o.fx,fy=o.fy==null?.25:o.fy;
   c.drawImage(im,(im.width-sw)*fx,(im.height-sh)*fy,sw,sh,x,y,w,h);
 }
@@ -93,6 +97,48 @@ function drawShape(c,l){
   c.fill();c.shadowColor='transparent';c.shadowBlur=0;c.shadowOffsetY=0;
   if(l.sw>0){c.strokeStyle=l.sc;c.lineWidth=l.sw;c.stroke()}
 }
+// ---- photo adjustments (brightness, contrast, colour, smoothness, mirror) ----
+function hasAdj(l){return !!(l.br||l.ct||l.sat||l.warm||l.smooth||(l.tone&&l.tone!=='none')||l.flip)}
+function adjusted(l,im,A){
+  if(!hasAdj(l))return im;
+  A.pc=A.pc||{};
+  const key=[l.src,l.br|0,l.ct|0,l.sat|0,l.warm|0,l.tone||'',l.smooth|0,l.flip?1:0].join('|'),h=A.pc[l.id];
+  if(h&&h.key===key)return h.cv;
+  const M=1400,s=Math.min(1,M/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*s)),hh=Math.max(1,Math.round(im.height*s));
+  const cv=A.mk(w,hh),x=cv.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingQuality='high';
+  if(l.flip){x.translate(w,0);x.scale(-1,1)}
+  x.drawImage(im,0,0,w,hh);
+  if(l.flip)x.setTransform(1,0,0,1,0,0);
+  const id=x.getImageData(0,0,w,hh),d=id.data;
+  const sm=Math.max(0,Math.min(100,l.smooth||0))/100;
+  let bl=null;
+  if(sm>0){
+    const f=3+sm*9,sc=A.mk(Math.max(1,Math.ceil(w/f)),Math.max(1,Math.ceil(hh/f))),sx=sc.getContext('2d');
+    sx.imageSmoothingQuality='high';sx.drawImage(cv,0,0,sc.width,sc.height);
+    const bc=A.mk(w,hh),bx=bc.getContext('2d',{willReadFrequently:true});bx.imageSmoothingQuality='high';bx.drawImage(sc,0,0,w,hh);
+    bl=bx.getImageData(0,0,w,hh).data;
+  }
+  const B=(l.br||0)*1.6,ct=l.ct||0,cf=ct>=0?1+ct/40:Math.max(.08,1+ct/110),sf=1+(l.sat||0)/100,W=(l.warm||0)*.45,tone=l.tone||'none';
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i],g=d[i+1],b=d[i+2];
+    if(bl){
+      const L=.299*r+.587*g+.114*b,Lb=.299*bl[i]+.587*bl[i+1]+.114*bl[i+2],t=sm*.9*(1-Math.min(1,Math.abs(L-Lb)/34));
+      r+=(bl[i]-r)*t;g+=(bl[i+1]-g)*t;b+=(bl[i+2]-b)*t;
+    }
+    r+=B;g+=B;b+=B;
+    if(cf!==1){r=(r-128)*cf+128;g=(g-128)*cf+128;b=(b-128)*cf+128}
+    if(sf!==1){const y=.299*r+.587*g+.114*b;r=y+(r-y)*sf;g=y+(g-y)*sf;b=y+(b-y)*sf}
+    if(W){r+=W;g+=W*.12;b-=W}
+    if(tone==='bw'){const y=.299*r+.587*g+.114*b;r=g=b=y}
+    else if(tone==='sepia'){const y=.299*r+.587*g+.114*b;r=y*1.07+14;g=y*.92+6;b=y*.7}
+    else if(tone==='vivid'){const y=.299*r+.587*g+.114*b;r=y+(r-y)*1.35;g=y+(g-y)*1.35;b=y+(b-y)*1.35;r=(r-128)*1.1+128;g=(g-128)*1.1+128;b=(b-128)*1.1+128}
+    d[i]=r;d[i+1]=g;d[i+2]=b;
+  }
+  x.putImageData(id,0,0);
+  A.pc[l.id]={key,cv};
+  return cv;
+}
 function drawImg(c,l,A){
   const w=l.w,h=l.h,im=l.src&&A.img(l.src),shp=l.shape||'rounded';
   const kind=shp==='rounded'?'rect':shp==='free'?'rect':shp;
@@ -105,12 +151,14 @@ function drawImg(c,l,A){
     }
     return;
   }
-  const fade=l.fade&&l.fade!=='none';
+  const fade=l.fade&&l.fade!=='none',im0=im;
+  const imA=adjusted(l,im0,A);
   let t=null;
-  if(fade){const S=2;t=A.mk(Math.ceil(w*S),Math.ceil(h*S));const tc=t.getContext('2d');cover(tc,im,0,0,t.width,t.height,l);fadeMask(tc,t.width,t.height,l.fade)}
+  if(fade){const S=2;t=A.mk(Math.ceil(w*S),Math.ceil(h*S));const tc=t.getContext('2d');cover(tc,imA,0,0,t.width,t.height,l);fadeMask(tc,t.width,t.height,l.fade)}
   if(l.shadow&&!fade&&shp!=='free'){c.save();shapePath(c,kind,w,h,meta);c.shadowColor='rgba(0,0,0,.55)';c.shadowBlur=26;c.shadowOffsetY=10;c.fillStyle='#000';c.fill();c.restore()}
+  if(shp==='free'&&l.shadow&&!fade){c.save();c.shadowColor='rgba(0,0,0,.55)';c.shadowBlur=26;c.shadowOffsetY=10;cover(c,imA,-w/2,-h/2,w,h,l);c.restore();return}
   c.save();shapePath(c,kind,w,h,meta);c.clip();
-  if(t)c.drawImage(t,-w/2,-h/2,w,h);else cover(c,im,-w/2,-h/2,w,h,l);
+  if(t)c.drawImage(t,-w/2,-h/2,w,h);else cover(c,imA,-w/2,-h/2,w,h,l);
   c.restore();
   if(l.bw>0&&shp!=='free'){shapePath(c,kind,w,h,meta);c.strokeStyle=l.bc||'#f6e27a';c.lineWidth=l.bw;c.stroke()}
 }
@@ -333,7 +381,7 @@ export function applyFontPack(D,p){
 export function mountStudio(root,opts){
   opts=opts||{};
   const IMS={},tray=[];let trayN=0;
-  let D=null,sel=null,hist=[],drag=null,pickFor=null;
+  let D=null,sel=null,hist=[],drag=null,pickFor=null,PAN=false;
   try{const s=JSON.parse(localStorage.getItem('oc_studio')||'null');if(s&&s.layers&&s.w)D=s}catch(e){}
   if(!D)D=TEMPLATES[0].build();
   const mk=(w,h)=>{const e=document.createElement('canvas');e.width=w;e.height=h;return e};
@@ -401,12 +449,19 @@ export function mountStudio(root,opts){
       if(Math.hypot(lo.x-l.w/2,lo.y-h/2)<22*s){drag={mode:'res',l,d0:Math.hypot(p.x-l.x,p.y-l.y)||1,i:{size:l.size,w:l.w,h:l.h},before};return}
     }
     const hit=hitLayer(p);
+    if(PAN&&hit&&hit.type==='image'&&hit.src&&IMS[hit.src]&&hit.id===sel){drag={mode:'pan',l:hit,p0:p,fx0:hit.fx==null?.5:hit.fx,fy0:hit.fy==null?.25:hit.fy,before};return}
     if(hit){sel=hit.id;drag={mode:'move',l:hit,dx:p.x-hit.x,dy:p.y-hit.y,moved:false,p0:p,before}}
     else{sel=null;drag=null}
     refresh();
   });
   ov.addEventListener('pointermove',e=>{
     if(!drag)return;const p=pt(e),l=drag.l;
+    if(drag.mode==='pan'){
+      const im=IMS[l.src],c0=Math.cos(-(l.rot||0)*Math.PI/180),s0=Math.sin(-(l.rot||0)*Math.PI/180),dx0=p.x-drag.p0.x,dy0=p.y-drag.p0.y,dx=dx0*c0-dy0*s0,dy=dx0*s0+dy0*c0;
+      const z=l.zoom||1,kk=(l.fit==='contain'?Math.min(l.w/im.width,l.h/im.height):Math.max(l.w/im.width,l.h/im.height))*z,rx=im.width*kk-l.w,ry=im.height*kk-l.h;
+      {if(rx>0)l.fx=Math.max(0,Math.min(1,drag.fx0-dx/rx));if(ry>0)l.fy=Math.max(0,Math.min(1,drag.fy0-dy/ry))}
+      draw();return;
+    }
     if(drag.mode==='move'){
       if(Math.hypot(p.x-drag.p0.x,p.y-drag.p0.y)>6*k())drag.moved=true;
       if(!drag.moved)return;
@@ -440,11 +495,128 @@ export function mountStudio(root,opts){
   }
   const fileIn=q('#st-files');
   const pickIn=document.createElement('input');pickIn.type='file';pickIn.accept='image/*';pickIn.style.display='none';root.appendChild(pickIn);
+
+  // ---- remove background (tap colour, brushes, auto for people) ----
+  let SEG=null;
+  function openCutout(l){
+    const baseId=l.orig||l.src,im=IMS[baseId];if(!im)return;
+    const M=1100,sc0=Math.min(1,M/Math.max(im.width,im.height)),W=Math.max(1,Math.round(im.width*sc0)),H=Math.max(1,Math.round(im.height*sc0));
+    const bc=mk(W,H),bx=bc.getContext('2d',{willReadFrequently:true});bx.drawImage(im,0,0,W,H);
+    const sd=bx.getImageData(0,0,W,H).data;
+    let mask=new Uint8Array(W*H).fill(255);const undo=[];let mode='pick';
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:9999;background:#0b1224;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch';
+    wrap.innerHTML=`<div style="max-width:460px;margin:0 auto;color:#fff">
+<h3 style="margin:6px 0">✂️ Remove background</h3>
+<p style="font-size:.92rem;margin:4px 0 8px">Tap the background colour to wipe it, or try Auto. Fix leftovers with the brushes, then tap Done.</p>
+<div class="row" id="cu-modes" style="gap:6px"><button class="sm" data-m="pick">👆 Tap background</button><button class="sec sm" data-m="erase">🧽 Rub out</button><button class="sec sm" data-m="restore">🖌 Bring back</button></div>
+<div style="margin:8px 0;line-height:0"><canvas id="cu-c" width="${W}" height="${H}" style="width:100%;height:auto;touch-action:none;border-radius:10px;background:conic-gradient(#bbb 25%,#fff 0 50%,#bbb 0 75%,#fff 0) 0 0/20px 20px"></canvas></div>
+<label style="color:#fff">How similar colours to remove <span id="cu-tv">30</span></label><input type="range" id="cu-tol" min="4" max="90" value="30">
+<label style="color:#fff"><input type="checkbox" id="cu-glob"> Also remove the same colour elsewhere (gaps, between arms)</label>
+<label style="color:#fff">Brush size <span id="cu-bv">26</span></label><input type="range" id="cu-bs" min="6" max="70" value="26">
+<label style="color:#fff">Soft edges <span id="cu-fv">1</span></label><input type="range" id="cu-ft" min="0" max="4" value="1">
+<p class="row"><button class="sec sm" id="cu-auto">✨ Auto (best for people)</button><button class="sec sm" id="cu-undo">↩ Undo</button><button class="sec sm" id="cu-reset">Start again</button></p>
+<p id="cu-note" style="font-size:.9rem;min-height:1.3em">Tap the background of your photo.</p>
+<p class="row"><button id="cu-ok">✅ Done</button><button class="sec" id="cu-x">Cancel</button></p></div>`;
+    document.body.appendChild(wrap);
+    const $=s=>wrap.querySelector(s),cvs=$('#cu-c'),cx=cvs.getContext('2d',{willReadFrequently:true}),od=cx.createImageData(W,H),dd=od.data;
+    for(let i=0,p=0;i<W*H;i++,p+=4){dd[p]=sd[p];dd[p+1]=sd[p+1];dd[p+2]=sd[p+2];dd[p+3]=255}
+    const cn=t=>{$('#cu-note').textContent=t};
+    const render=()=>{for(let i=0,p=3;i<mask.length;i++,p+=4)dd[p]=mask[i];cx.putImageData(od,0,0)};
+    const push=()=>{undo.push(mask.slice());if(undo.length>20)undo.shift()};
+    render();
+    const setMode=m=>{mode=m;wrap.querySelectorAll('#cu-modes button').forEach(b=>{b.className=(b.dataset.m===m?'':'sec ')+'sm'});cn(m==='pick'?'Tap the background colour.':m==='erase'?'Rub over what should disappear.':'Rub over what should come back.')};
+    wrap.querySelectorAll('#cu-modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+    [['cu-tol','cu-tv'],['cu-bs','cu-bv'],['cu-ft','cu-fv']].forEach(([a,b])=>{$('#'+a).oninput=()=>{$('#'+b).textContent=$('#'+a).value}});
+    const xy=e=>{const r=cvs.getBoundingClientRect();return{x:Math.max(0,Math.min(W-1,Math.round((e.clientX-r.left)*W/r.width))),y:Math.max(0,Math.min(H-1,Math.round((e.clientY-r.top)*H/r.height))),k:W/r.width}};
+    function pickAt(px,py){
+      let r=0,g=0,b=0,n=0;
+      for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=px+dx,y=py+dy;if(x<0||y<0||x>=W||y>=H)continue;const p=(y*W+x)*4;r+=sd[p];g+=sd[p+1];b+=sd[p+2];n++}
+      r/=n;g/=n;b/=n;
+      const th=+$('#cu-tol').value*2.4,t2=th*th,near=i=>{const p=i*4,a=sd[p]-r,c=sd[p+1]-g,d=sd[p+2]-b;return a*a+c*c+d*d<=t2};
+      push();let cnt=0;
+      if($('#cu-glob').checked){for(let i=0;i<mask.length;i++)if(near(i)&&mask[i]){mask[i]=0;cnt++}}
+      else{
+        const seen=new Uint8Array(W*H),st=new Int32Array(W*H);let sp=0;const s0=py*W+px;
+        if(near(s0)){st[sp++]=s0;seen[s0]=1}
+        while(sp){const i=st[--sp];if(mask[i]){mask[i]=0;cnt++}const x=i%W,y=(i/W)|0;
+          if(x>0&&!seen[i-1]&&near(i-1)){seen[i-1]=1;st[sp++]=i-1}
+          if(x<W-1&&!seen[i+1]&&near(i+1)){seen[i+1]=1;st[sp++]=i+1}
+          if(y>0&&!seen[i-W]&&near(i-W)){seen[i-W]=1;st[sp++]=i-W}
+          if(y<H-1&&!seen[i+W]&&near(i+W)){seen[i+W]=1;st[sp++]=i+W}}
+      }
+      render();cn(cnt?'Removed. Tap again to remove more, or raise "how similar" if bits are left.':'Nothing matched there. Raise "how similar" or tap a different spot.');
+    }
+    function brushAt(px,py,k,val){
+      const r=Math.max(2,(+$('#cu-bs').value/2)*k),r2=r*r,x0=Math.max(0,Math.floor(px-r)),x1=Math.min(W-1,Math.ceil(px+r)),y0=Math.max(0,Math.floor(py-r)),y1=Math.min(H-1,Math.ceil(py+r));
+      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const a=x-px,b=y-py;if(a*a+b*b<=r2)mask[y*W+x]=val}
+    }
+    let down=null;
+    cvs.addEventListener('pointerdown',e=>{
+      e.preventDefault();cvs.setPointerCapture(e.pointerId);const p=xy(e);
+      if(mode==='pick'){pickAt(p.x,p.y);return}
+      push();down=p;brushAt(p.x,p.y,p.k,mode==='erase'?0:255);render();
+    });
+    cvs.addEventListener('pointermove',e=>{
+      if(!down)return;const p=xy(e),dx=p.x-down.x,dy=p.y-down.y,n=Math.max(1,Math.ceil(Math.hypot(dx,dy)/Math.max(2,+$('#cu-bs').value*p.k/4)));
+      for(let i=1;i<=n;i++)brushAt(down.x+dx*i/n,down.y+dy*i/n,p.k,mode==='erase'?0:255);
+      down=p;render();
+    });
+    const up=()=>{down=null};cvs.addEventListener('pointerup',up);cvs.addEventListener('pointercancel',up);
+    $('#cu-undo').onclick=()=>{if(undo.length){mask=undo.pop();render();cn('Undone.')}else cn('Nothing to undo.')};
+    $('#cu-reset').onclick=()=>{push();mask.fill(255);render();cn('Started again. Tap the background.')};
+    $('#cu-x').onclick=()=>wrap.remove();
+    $('#cu-auto').onclick=async()=>{
+      const btn=$('#cu-auto');btn.disabled=true;
+      try{
+        cn('Loading the auto tool. The first time needs internet and can take a minute…');
+        const V='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+        const mod=await import(V+'/vision_bundle.mjs');
+        if(!SEG){
+          const fs=await mod.FilesetResolver.forVisionTasks(V+'/wasm');
+          SEG=await mod.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',delegate:'CPU'},runningMode:'IMAGE',outputConfidenceMasks:true,outputCategoryMask:false});
+        }
+        cn('Finding the person…');
+        const res=SEG.segment(bc),ms=res.confidenceMasks,m=ms[ms.length>1?1:0],f=m.getAsFloat32Array(),mw=m.width,mh=m.height;
+        const sm=mk(mw,mh),sx=sm.getContext('2d',{willReadFrequently:true}),sid=sx.createImageData(mw,mh);
+        for(let i=0;i<mw*mh;i++){const p=i*4;sid.data[p]=sid.data[p+1]=sid.data[p+2]=0;sid.data[p+3]=Math.max(0,Math.min(255,f[i]*255))}
+        sx.putImageData(sid,0,0);
+        const bg=mk(W,H),bgx=bg.getContext('2d',{willReadFrequently:true});bgx.imageSmoothingQuality='high';bgx.drawImage(sm,0,0,W,H);
+        const A2=bgx.getImageData(0,0,W,H).data,pr=new Float32Array(W*H);
+        for(let i=0;i<W*H;i++)pr[i]=A2[i*4+3]/255;
+        let bs=0,bn=0;for(let x=0;x<W;x++){bs+=pr[x]+pr[(H-1)*W+x];bn+=2}for(let y=0;y<H;y++){bs+=pr[y*W]+pr[y*W+W-1];bn+=2}
+        const inv=bs/bn>.5;
+        push();
+        for(let i=0;i<W*H;i++){let v=inv?1-pr[i]:pr[i];v=Math.max(0,Math.min(1,(v-.35)/.3));v=v*v*(3-2*v);mask[i]=Math.round(v*255)}
+        try{res.close&&res.close()}catch(e){}
+        render();cn('Done. Fix any leftovers with the brushes, then tap Done.');
+      }catch(err){
+        console.error(err);cn('The auto tool could not load (it needs a good internet connection). Use "Tap background" instead.');
+      }
+      btn.disabled=false;
+    };
+    $('#cu-ok').onclick=()=>{
+      let m=mask;const r=+$('#cu-ft').value;
+      if(r>0){
+        const t=new Float32Array(W*H),o=new Uint8Array(W*H),n=2*r+1;
+        for(let y=0;y<H;y++){let a=0;for(let x=-r;x<=r;x++)a+=m[y*W+Math.max(0,Math.min(W-1,x))];for(let x=0;x<W;x++){t[y*W+x]=a/n;a+=m[y*W+Math.min(W-1,x+r+1)]-m[y*W+Math.max(0,x-r)]}}
+        for(let x=0;x<W;x++){let a=0;for(let y=-r;y<=r;y++)a+=t[Math.max(0,Math.min(H-1,y))*W+x];for(let y=0;y<H;y++){o[y*W+x]=Math.round(a/n);a+=t[Math.min(H-1,y+r+1)*W+x]-t[Math.max(0,y-r)*W+x]}}
+        m=o;
+      }
+      const fc=mk(W,H),fx=fc.getContext('2d'),fi=fx.createImageData(W,H);
+      for(let i=0,p=0;i<W*H;i++,p+=4){fi.data[p]=sd[p];fi.data[p+1]=sd[p+1];fi.data[p+2]=sd[p+2];fi.data[p+3]=m[i]}
+      fx.putImageData(fi,0,0);
+      const id='p'+(++trayN);IMS[id]=fc;
+      const b=snapshot();l.orig=baseId;l.src=id;l.shape='free';l.fade='none';l.bw=0;commit(b);
+      wrap.remove();note.textContent='Background removed ✅ Tap “Bring back background” if you change your mind.';
+      refresh();draw();
+    };
+  }
   function openPicker(l){pickFor=l.id;pickIn.value='';pickIn.click()}
   pickIn.addEventListener('change',async()=>{
     const f=pickIn.files&&pickIn.files[0];if(!f||!pickFor)return;
     const id=await loadFile(f);tray.push(id);const l=get(pickFor);pickFor=null;
-    if(l){const b=snapshot();if(l.type==='image')l.src=id;commit(b)}
+    if(l){const b=snapshot();if(l.type==='image'){l.src=id;l.orig=null}commit(b)}
     refresh();draw();
   });
   fileIn.addEventListener('change',async()=>{
@@ -469,7 +641,7 @@ export function mountStudio(root,opts){
       c.style.cssText='width:54px;height:54px';b.appendChild(c);
       b.onclick=()=>{
         const l=get(sel),bf=snapshot();
-        if(l&&l.type==='image')l.src=id;
+        if(l&&l.type==='image'){l.src=id;l.orig=null}
         else{const n=F.img(D.w/2,D.h/2,420,520,{src:id});D.layers.push(n);sel=n.id}
         commit(bf);refresh();draw();
       };
@@ -494,6 +666,12 @@ export function mountStudio(root,opts){
       add('shape','Photo shape','sel',{opts:[['rounded','Rounded box'],['rect','Square corners'],['circle','Circle / oval'],['arch','Arch'],['free','Free (no frame, blends)']]});
       add('w','Width','range',{min:40,max:1500,step:1});add('h','Height','range',{min:40,max:2000,step:1});
       add('zoom','Zoom in the photo','range',{min:1,max:4,step:.05});add('fx','Move photo left / right','range',{min:0,max:1,step:.01});add('fy','Move photo up / down','range',{min:0,max:1,step:.01});
+      add('fit','How the photo fits the box','sel',{opts:[['cover','Fill the box (crops edges)'],['contain','Show the whole photo']]});
+      add('flip','Mirror the photo (flip left / right)','chk');
+      add('br','Brightness','range',{min:-100,max:100,step:1,def:0});add('ct','Contrast','range',{min:-100,max:100,step:1,def:0});
+      add('sat','Colour strength','range',{min:-100,max:100,step:1,def:0});add('warm','Warm (+) or cool (-)','range',{min:-100,max:100,step:1,def:0});
+      add('smooth','Smoothness (soften skin)','range',{min:0,max:100,step:1,def:0});
+      add('tone','Colour look','sel',{opts:[['none','Original'],['bw','Black and white'],['sepia','Old photo (sepia)'],['vivid','Vivid']]});
       add('fade','Fade the edges (blend)','sel',{opts:[['none','No fade'],['bottom','Bottom'],['top','Top'],['sides','Left and right'],['all','All edges']]});
       add('radius','Corner roundness','range',{min:0,max:200,step:1});add('bw','Border thickness','range',{min:0,max:24,step:1});add('bc','Border colour','color');add('shadow','Shadow','chk');
     }else if(l.type==='shape'){
@@ -511,23 +689,24 @@ export function mountStudio(root,opts){
     let h='';
     list.forEach(f=>{
       const v=l[f.key],id=prefix+f.key;
-      h+=`<label for="${id}">${f.label}${f.type==='range'?` <span class="mut" id="${id}-v">${v==null?'':Math.round(v*100)/100}</span>`:''}</label>`;
+      h+=`<div style="margin:6px 0"></div>`.slice(0,-6)+`<label style="display:block" for="${id}">${f.label}${f.type==='range'?` <span class="mut" id="${id}-v">${v==null?(f.def==null?'':f.def):Math.round(v*100)/100}</span>`:''}</label>`;
       if(f.type==='area')h+=`<textarea id="${id}" data-k="${f.key}" rows="3">${String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>`;
       else if(f.type==='sel')h+=`<select id="${id}" data-k="${f.key}">${opt(f.opts,v)}</select>`;
       else if(f.type==='color')h+=`<input type="color" id="${id}" data-k="${f.key}" value="${hex(v)}">`;
       else if(f.type==='chk')h+=`<input type="checkbox" id="${id}" data-k="${f.key}"${v?' checked':''}>`;
-      else h+=`<input type="range" id="${id}" data-k="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${v==null?f.min:v}">`;
+      else h+=`<input type="range" id="${id}" data-k="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${v==null?(f.def==null?f.min:f.def):v}">`;
+      h+='</div>';
     });
     cont.innerHTML=h;
   }
-  const QUICK={text:['text','font','size','color','grad'],image:['shape','zoom','fade'],shape:['kind','c1'],glow:['color'],dots:['color']};
+  const QUICK={text:['text','font','size','color','grad'],image:['shape','zoom','fit','br','ct','sat','warm','smooth','tone','fade'],shape:['kind','c1'],glow:['color'],dots:['color']};
   function refreshProps(){
     const p=q('#st-props'),qk=q('#st-quick'),l=get(sel),a=q('#st-acts');
     if(!l){p.innerHTML='<p class="mut">Nothing selected. Tap something on the flyer.</p>';qk.innerHTML='<p class="mut">Tap something on the flyer to edit it here.</p>';a.style.display='none';return}
     a.style.display='';
     const all=fields(l);
     renderFields(qk,l,all.filter(f=>QUICK[l.type].includes(f.key)),'st-q-');
-    if(l.type==='image')qk.insertAdjacentHTML('afterbegin','<p class="row"><button class="sec sm" data-pick="1">📷 Choose photo from phone</button><button class="sec sm" data-clearimg="1">Empty this box</button></p>');
+    if(l.type==='image')qk.insertAdjacentHTML('afterbegin','<p class="row"><button class="sec sm" data-pick="1">📷 Choose photo</button>'+(l.src?'<button class="sec sm" data-cut="1">✂️ Remove background</button><button class="'+(PAN?'':'sec ')+'sm" data-pan="1">✋ Move photo inside box: '+(PAN?'ON':'OFF')+'</button>':'')+'</p><p class="row">'+(l.src?'<button class="sec sm" data-resetadj="1">↺ Reset colours</button>':'')+(l.orig?'<button class="sec sm" data-restore="1">Bring back background</button>':'')+'<button class="sec sm" data-clearimg="1">Empty this box</button></p>');
     renderFields(p,l,all,'st-f-');
   }
   function onProp(e){
@@ -543,7 +722,11 @@ export function mountStudio(root,opts){
   function onPropClick(e){
     const l=get(sel);if(!l)return;
     if(e.target.dataset.pick)openPicker(l);
-    if(e.target.dataset.clearimg){const b=snapshot();l.src=null;commit(b);draw()}
+    if(e.target.dataset.clearimg){const b=snapshot();l.src=null;l.orig=null;commit(b);draw();refreshProps()}
+    if(e.target.dataset.cut)openCutout(l);
+    if(e.target.dataset.pan){PAN=!PAN;refreshProps();note.textContent=PAN?'Now drag on the photo to move it inside its box. Tap the button again to move the box instead.':'Dragging moves the whole box again.'}
+    if(e.target.dataset.resetadj){const b=snapshot();['br','ct','sat','warm','smooth'].forEach(k=>{l[k]=0});l.tone='none';l.flip=false;commit(b);draw();refreshProps()}
+    if(e.target.dataset.restore&&l.orig){const b=snapshot();l.src=l.orig;l.orig=null;l.shape='rounded';commit(b);draw();refreshProps()}
   }
   ['#st-props','#st-quick'].forEach(id=>{const el=q(id);el.addEventListener('input',onProp);el.addEventListener('change',onPropDone);el.addEventListener('click',onPropClick)});
   function layerName(l,i){
