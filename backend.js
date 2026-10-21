@@ -2,7 +2,7 @@ import{mountStudio,FONT_CSS}from'./studio.js';
 import{renderFlyer,SIZES as FLSIZES,THEMES as FLTHEMES,DEFAULTS as FLDEF}from'./flyer-design.js';
 // OrganizeChurch backend layer, milestone 1: Google/Facebook sign-in, shared churches, private church data.
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import{getAuth,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import{getAuth,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import{getFirestore,collection,doc,getDocs,getDoc,setDoc,addDoc,deleteDoc,query,where}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import{firebaseConfig,aiUrl}from'./firebase-config.js';
 
@@ -82,11 +82,19 @@ window.dlUp=async(cid,id)=>{const x=((ch(cid)||{}).uploads||[]).find(u=>u.id===i
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-b],[data-a]');if(!b)return;
   if(b.dataset.b){
-    try{await signInWithPopup(auth,b.dataset.b==='google'?new GoogleAuthProvider():new FacebookAuthProvider());msg=''}
-    catch(x){const n=nice(x.code);msg=x.code==='auth/popup-closed-by-user'?'':(n!==undefined?n:'Sign-in failed')+(n===''?'':' ['+x.code+']');route()}
+    const prov=b.dataset.b==='google'?new GoogleAuthProvider():new FacebookAuthProvider();
+    try{await signInWithPopup(auth,prov);msg=''}
+    catch(x){
+      // Popup blocked or not supported on this phone/browser: switch to full-page sign-in instead
+      if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(x.code)){
+        try{msg='Opening Google sign-in…';route();await signInWithRedirect(auth,prov);return}catch(y){x=y}
+      }
+      const n=nice(x.code);msg=x.code==='auth/popup-closed-by-user'?'':(n!==undefined?n:'Sign-in failed')+(n===''?'':' ['+x.code+']');route()}
   }else if(b.dataset.a==='out'){signOut(auth)}
   else if(b.dataset.a==='delmsg'&&user&&S.session){deleteDoc(doc(db,'churches',S.session,'inbox',b.dataset.id)).catch(()=>{})}
 },true);
+
+getRedirectResult(auth).catch(x=>{if(x&&x.code){msg=(nice(x.code)||'Sign-in failed')+' ['+x.code+']';try{route()}catch(e){}}});
 
 // Visitor messages and support requests go to Firebase instead of this browser.
 document.addEventListener('submit',async e=>{
