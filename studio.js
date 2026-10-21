@@ -392,7 +392,10 @@ export function mountStudio(root,opts){
   root.innerHTML=`<div class="card"><h1>🎨 Creative Studio</h1><p class="mut">Build any flyer: use many photos, move and resize everything, change fonts and colours. Start from a design or from blank.</p>
 <label for="st-tpl">Start from a design</label><div class="row"><select id="st-tpl">${TEMPLATES.map((t,i)=>`<option value="${i}">${t.name}</option>`).join('')}</select><button id="st-apply">Use this design</button></div>
 <div class="row"><select id="st-size">${opt(Object.keys(SIZES),'Portrait 4:5')}</select><button class="sec sm" id="st-undo">↩ Undo</button><button class="sec sm" id="st-desel">Deselect</button></div>
-<div id="st-stage" style="position:relative;line-height:0;margin-top:8px"><canvas id="st-c" style="width:100%;height:auto;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25)"></canvas><canvas id="st-o" style="position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none;border-radius:10px"></canvas></div>
+<div id="st-dock" style="position:sticky;top:0;z-index:4;background:var(--card,#0b1224);padding:6px 0 4px;margin-top:8px;border-bottom:1px solid rgba(128,128,128,.25)">
+<div id="st-stage" style="position:relative;line-height:0;width:fit-content;max-width:100%;margin:0 auto"><canvas id="st-c" style="display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25)"></canvas><canvas id="st-o" style="position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none;border-radius:10px"></canvas></div>
+<div id="st-mini" style="line-height:1.2;margin-top:4px"></div>
+<label style="display:block;font-size:.8rem;margin-top:2px"><input type="checkbox" id="st-pin" checked> Keep the flyer in view while I edit</label></div>
 <p class="mut" id="st-hint">Tap an item to edit it. Drag to move. Pull the blue dot to resize and the orange dot to turn it. Tap an empty photo box to add a photo.</p>
 <div id="st-quick" style="background:rgba(255,255,255,.06);border-radius:12px;padding:8px 10px"><p class="mut">Tap something on the flyer to edit it here.</p></div>
 <div class="row" id="st-acts" style="display:none;margin-top:6px"><button class="sec sm" id="st-up">⬆ Bring forward</button><button class="sec sm" id="st-down">⬇ Send back</button><button class="sec sm" id="st-dup">Copy</button><button class="sec sm" id="st-del">Delete</button></div>
@@ -406,11 +409,25 @@ export function mountStudio(root,opts){
 <p class="row"><button id="st-dl">⬇️ Download flyer (PNG)</button><button class="sec" id="st-sh">📤 Share</button></p>
 <p id="st-note" class="mut" role="status">Saved at double size, sharp for WhatsApp, social media and printing.</p></div>`;
   const cv=q('#st-c'),ov=q('#st-o'),note=q('#st-note');
+  // header takes too much room on phones while editing: let it scroll away, keep the flyer pinned instead
+  const hdEl=document.getElementById('hd');
+  function pinOn(on){const d=q('#st-dock');if(!d)return;d.style.position=on?'sticky':'static';if(hdEl)hdEl.style.position=on?'static':'';}
+  try{if(localStorage.getItem('oc_pin')==='0'){q('#st-pin').checked=false}}catch(e){}
+  q('#st-pin').addEventListener('change',e=>{pinOn(e.target.checked);fitStage();try{localStorage.setItem('oc_pin',e.target.checked?'1':'0')}catch(x){}});
+  pinOn(q('#st-pin').checked);
+  window.addEventListener('hashchange',()=>{if(!location.hash.startsWith('#/flyer')&&hdEl)hdEl.style.position=''});
   const ctx=cv.getContext('2d'),octx=ov.getContext('2d');
 
   function hOf(l){return l.type==='text'?(l._h||l.size*1.2):l.h}
+  function fitStage(){
+    const dk=q('#st-dock');if(!dk)return;
+    const pinned=q('#st-pin')&&q('#st-pin').checked,aw=Math.max(120,dk.clientWidth),mh=Math.max(160,(window.innerHeight||700)*(pinned?.34:.8));
+    const sc=Math.min(aw/D.w,mh/D.h);cv.style.width=Math.floor(D.w*sc)+'px';
+  }
+  window.addEventListener('resize',()=>{fitStage();drawOverlay()});
   function draw(){
     if(cv.width!==D.w||cv.height!==D.h){cv.width=D.w;cv.height=D.h;ov.width=D.w;ov.height=D.h}
+    fitStage();
     drawDesign(ctx,D,A);drawOverlay();
   }
   function k(){const r=ov.getBoundingClientRect();return r.width?D.w/r.width:1}
@@ -503,27 +520,28 @@ export function mountStudio(root,opts){
     const M=1100,sc0=Math.min(1,M/Math.max(im.width,im.height)),W=Math.max(1,Math.round(im.width*sc0)),H=Math.max(1,Math.round(im.height*sc0));
     const bc=mk(W,H),bx=bc.getContext('2d',{willReadFrequently:true});bx.drawImage(im,0,0,W,H);
     const sd=bx.getImageData(0,0,W,H).data;
-    let mask=new Uint8Array(W*H).fill(255);const undo=[];let mode='pick';
+    let mask=new Uint8Array(W*H).fill(255);const undo=[],redo=[];let mode='pick';
     const wrap=document.createElement('div');
     wrap.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:9999;background:#0b1224;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch';
     wrap.innerHTML=`<div style="max-width:460px;margin:0 auto;color:#fff">
+<div style="position:sticky;top:-10px;z-index:3;background:#0b1224;padding:8px 0 6px;margin:-10px 0 4px"><div class="row" style="gap:6px;align-items:center"><button class="sec sm" id="cu-undo">↩ Back</button><button class="sec sm" id="cu-redo">↪ Forward</button><button class="sec sm" id="cu-x">Cancel</button><button class="sm" id="cu-ok">✅ OK</button></div></div>
 <h3 style="margin:6px 0">✂️ Remove background</h3>
 <p style="font-size:.92rem;margin:4px 0 8px">Tap the background colour to wipe it, or try Auto. Fix leftovers with the brushes, then tap Done.</p>
 <div class="row" id="cu-modes" style="gap:6px"><button class="sm" data-m="pick">👆 Tap background</button><button class="sec sm" data-m="erase">🧽 Rub out</button><button class="sec sm" data-m="restore">🖌 Bring back</button></div>
-<div style="margin:8px 0;line-height:0"><canvas id="cu-c" width="${W}" height="${H}" style="width:100%;height:auto;touch-action:none;border-radius:10px;background:conic-gradient(#bbb 25%,#fff 0 50%,#bbb 0 75%,#fff 0) 0 0/20px 20px"></canvas></div>
+<div style="margin:8px 0;line-height:0"><canvas id="cu-c" width="${W}" height="${H}" style="width:auto;max-width:100%;max-height:52vh;height:auto;display:block;margin:0 auto;touch-action:none;border-radius:10px;background:conic-gradient(#bbb 25%,#fff 0 50%,#bbb 0 75%,#fff 0) 0 0/20px 20px"></canvas></div>
 <label style="color:#fff">How similar colours to remove <span id="cu-tv">30</span></label><input type="range" id="cu-tol" min="4" max="90" value="30">
 <label style="color:#fff"><input type="checkbox" id="cu-glob"> Also remove the same colour elsewhere (gaps, between arms)</label>
 <label style="color:#fff">Brush size <span id="cu-bv">26</span></label><input type="range" id="cu-bs" min="6" max="70" value="26">
 <label style="color:#fff">Soft edges <span id="cu-fv">1</span></label><input type="range" id="cu-ft" min="0" max="4" value="1">
-<p class="row"><button class="sec sm" id="cu-auto">✨ Auto (best for people)</button><button class="sec sm" id="cu-undo">↩ Undo</button><button class="sec sm" id="cu-reset">Start again</button></p>
+<p class="row"><button class="sec sm" id="cu-auto">✨ Auto (best for people)</button><button class="sec sm" id="cu-reset">Start again</button></p>
 <p id="cu-note" style="font-size:.9rem;min-height:1.3em">Tap the background of your photo.</p>
-<p class="row"><button id="cu-ok">✅ Done</button><button class="sec" id="cu-x">Cancel</button></p></div>`;
+<p class="mut" style="font-size:.85rem">Use Back and Forward at the top to undo or redo any step, then tap OK.</p></div>`;
     document.body.appendChild(wrap);
     const $=s=>wrap.querySelector(s),cvs=$('#cu-c'),cx=cvs.getContext('2d',{willReadFrequently:true}),od=cx.createImageData(W,H),dd=od.data;
     for(let i=0,p=0;i<W*H;i++,p+=4){dd[p]=sd[p];dd[p+1]=sd[p+1];dd[p+2]=sd[p+2];dd[p+3]=255}
     const cn=t=>{$('#cu-note').textContent=t};
     const render=()=>{for(let i=0,p=3;i<mask.length;i++,p+=4)dd[p]=mask[i];cx.putImageData(od,0,0)};
-    const push=()=>{undo.push(mask.slice());if(undo.length>20)undo.shift()};
+    const push=()=>{undo.push(mask.slice());redo.length=0;if(undo.length>30)undo.shift()};
     render();
     const setMode=m=>{mode=m;wrap.querySelectorAll('#cu-modes button').forEach(b=>{b.className=(b.dataset.m===m?'':'sec ')+'sm'});cn(m==='pick'?'Tap the background colour.':m==='erase'?'Rub over what should disappear.':'Rub over what should come back.')};
     wrap.querySelectorAll('#cu-modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
@@ -563,7 +581,8 @@ export function mountStudio(root,opts){
       down=p;render();
     });
     const up=()=>{down=null};cvs.addEventListener('pointerup',up);cvs.addEventListener('pointercancel',up);
-    $('#cu-undo').onclick=()=>{if(undo.length){mask=undo.pop();render();cn('Undone.')}else cn('Nothing to undo.')};
+    $('#cu-undo').onclick=()=>{if(undo.length){redo.push(mask.slice());mask=undo.pop();render();cn('Went back one step.')}else cn('Nothing to go back to.')};
+    $('#cu-redo').onclick=()=>{if(redo.length){undo.push(mask.slice());mask=redo.pop();render();cn('Went forward one step.')}else cn('Nothing to go forward to.')};
     $('#cu-reset').onclick=()=>{push();mask.fill(255);render();cn('Started again. Tap the background.')};
     $('#cu-x').onclick=()=>wrap.remove();
     $('#cu-auto').onclick=async()=>{
@@ -699,9 +718,20 @@ export function mountStudio(root,opts){
     });
     cont.innerHTML=h;
   }
-  const QUICK={text:['text','font','size','color','grad'],image:['shape','zoom','fit','br','ct','sat','warm','smooth','tone','fade'],shape:['kind','c1'],glow:['color'],dots:['color']};
+  const QUICK={text:['text','font','size','color','grad'],image:['shape','fit','br','ct','sat','warm','smooth','tone','fade'],shape:['kind','c1'],glow:['color'],dots:['color']};
+  function refreshMini(l){
+    const m=q('#st-mini');if(!m)return;
+    const row=(ic,txt,key,min,max,step,val,def)=>`<label style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:.9rem"><span style="white-space:nowrap">${ic} ${txt}</span><input type="range" id="st-m-${key}" data-k="${key}" min="${min}" max="${max}" step="${step}" value="${val==null?def:val}" style="flex:1;min-width:0"><span class="mut" id="st-m-${key}-v">${Math.round((val==null?def:val)*100)/100}</span></label>`;
+    if(!l){m.innerHTML='';return}
+    if(l.type==='image'&&l.src)m.innerHTML=row('🔍','Zoom photo','zoom',1,4,.05,l.zoom,1)+`<div class="row" style="gap:6px;margin:2px 0"><button class="${PAN?'':'sec '}sm" data-pan="1">✋ Move photo in box: ${PAN?'ON':'OFF'}</button><button class="sec sm" data-cut="1">✂️ Remove background</button></div>`;
+    else if(l.type==='image')m.innerHTML='<span class="mut" style="font-size:.85rem">Tap “Choose photo” below to fill this box.</span>';
+    else if(l.type==='text')m.innerHTML=row('🔠','Text size','size',10,420,1,l.size,60);
+    else if(l.type==='shape')m.innerHTML=row('↔','Width','w',10,1500,1,l.w,300);
+    else m.innerHTML='';
+  }
   function refreshProps(){
     const p=q('#st-props'),qk=q('#st-quick'),l=get(sel),a=q('#st-acts');
+    refreshMini(l);
     if(!l){p.innerHTML='<p class="mut">Nothing selected. Tap something on the flyer.</p>';qk.innerHTML='<p class="mut">Tap something on the flyer to edit it here.</p>';a.style.display='none';return}
     a.style.display='';
     const all=fields(l);
@@ -728,7 +758,7 @@ export function mountStudio(root,opts){
     if(e.target.dataset.resetadj){const b=snapshot();['br','ct','sat','warm','smooth'].forEach(k=>{l[k]=0});l.tone='none';l.flip=false;commit(b);draw();refreshProps()}
     if(e.target.dataset.restore&&l.orig){const b=snapshot();l.src=l.orig;l.orig=null;l.shape='rounded';commit(b);draw();refreshProps()}
   }
-  ['#st-props','#st-quick'].forEach(id=>{const el=q(id);el.addEventListener('input',onProp);el.addEventListener('change',onPropDone);el.addEventListener('click',onPropClick)});
+  ['#st-props','#st-quick','#st-mini'].forEach(id=>{const el=q(id);el.addEventListener('input',onProp);el.addEventListener('change',onPropDone);el.addEventListener('click',onPropClick)});
   function layerName(l,i){
     if(l.type==='text')return'Aa '+String(l.text||'').replace(/\n/g,' ').slice(0,14);
     if(l.type==='image')return(l.logo?'Logo ':'Photo ')+(i+1);
