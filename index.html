@@ -210,11 +210,22 @@ function welHtml(c){const w=c.welcome||[];if(!w.length)return`<div class='hero' 
 
 // ---- share the verse / declaration of the day (text or picture) with the app link ----
 const APPURL='https://organizechurch.github.io';
+const ADS=[
+"✨ Your church AND your creativity, in one app. Manage members, attendance and announcements, design stunning flyers, and get a fresh word every single day. Free to start 👇",
+"🔥 Pastors, leaders, creatives: this one is for you. Church management, flyer design, AI sermon help and daily inspiration in one beautiful digital space. Try it free 👇",
+"🙏 Start every day with the Word, and run your church like a pro. Daily verse, declaration and prophetic picture, plus members, attendance and prayer requests. All in OrganizeChurch 👇",
+"🎨 Create. Organise. Inspire. Design church flyers in minutes, edit your photos, track your members and grow your ministry from one app on your phone 👇",
+"💡 What if your church admin, your sermon prep and your daily inspiration lived in one place? They do now. Join the early churches using OrganizeChurch (free) 👇",
+"🌟 Birthdays, announcements, sermons, flyers, prayer requests and daily prophetic words, beautifully organised in one app built for the Kingdom. Come and see 👇",
+"📖 Read the Bible, take the Bible challenge, get daily declarations, design flyers and manage your church. One free app. One inspired community 👇",
+"🚀 Your ministry deserves a modern home. OrganizeChurch gives you church management tools, creative flyer studio, AI sermon assistant and daily inspiration. Free for early churches 👇"
+];
+const adLine=k=>ADS[0]+'\n'+APPURL;
 function dayText(kind){
   const v=votd();
-  if(kind==='art'){const a=window.dayArtLine?window.dayArtLine(dayIdx()):[v[0],v[1]];return`🙏 Prophetic Word of the Day\n${a[0]}\n— ${a[1]} (KJV)\n\nGet the OrganizeChurch app for daily verses, declarations and flyers:\n${APPURL}`}
-  if(kind==='verse')return`📖 Verse of the Day\n“${v[0]}”\n— ${v[1]} (KJV)\n\nGet the OrganizeChurch app for daily verses, declarations and flyers:\n${APPURL}`;
-  return`🔥 Declaration of the Day\n${v[2].join('\n')}\n\n(Based on ${v[1]})\n\nGet the OrganizeChurch app for daily verses, declarations and flyers:\n${APPURL}`;
+  if(kind==='art'){const a=window.dayArtLine?window.dayArtLine(dayIdx()):[v[0],v[1]];return`🙏 Prophetic Word of the Day\n${a[0]}\n— ${a[1]} (KJV)\n\n${adLine(kind)}`}
+  if(kind==='verse')return`📖 Verse of the Day\n“${v[0]}”\n— ${v[1]} (KJV)\n\n${adLine(kind)}`;
+  return`🔥 Declaration of the Day\n${v[2].join('\n')}\n\n(Based on ${v[1]})\n\n${adLine(kind)}`;
 }
 // When a picture is shared, its caption is a DIFFERENT piece: prophetic picture -> verse, verse picture -> declaration, declaration picture -> prophetic word
 function capText(kind){return dayText(kind==='art'?'verse':kind==='verse'?'decl':'art')}
