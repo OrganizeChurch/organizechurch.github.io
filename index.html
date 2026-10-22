@@ -221,6 +221,7 @@ function capText(kind){return dayText(kind==='art'?'verse':kind==='verse'?'decl'
 function wrapLines(x,text,maxW){const out=[];String(text).split('\n').forEach(par=>{let cur='';par.split(/\s+/).filter(Boolean).forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>maxW&&cur){out.push(cur);cur=w}else cur=t});out.push(cur)});return out}
 function dayCard(kind){
   if(kind==='art'&&window.dayArt)return new Promise(res=>window.dayArt(dayIdx()).toBlob(b=>res(b),'image/png'));
+  if(window.dayCardArt){window.dayArtReadyLogo&&window.dayArtReadyLogo();return new Promise(res=>window.dayCardArt(kind,votd()).toBlob(b=>res(b),'image/png'))}
   return new Promise(res=>{
     const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),v=votd();
     const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0a1a52');g.addColorStop(1,'#1e40af');x.fillStyle=g;x.fillRect(0,0,W,H);
