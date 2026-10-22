@@ -216,6 +216,8 @@ function dayText(kind){
   if(kind==='verse')return`📖 Verse of the Day\n“${v[0]}”\n— ${v[1]} (KJV)\n\nGet the OrganizeChurch app for daily verses, declarations and flyers:\n${APPURL}`;
   return`🔥 Declaration of the Day\n${v[2].join('\n')}\n\n(Based on ${v[1]})\n\nGet the OrganizeChurch app for daily verses, declarations and flyers:\n${APPURL}`;
 }
+// When a picture is shared, its caption is a DIFFERENT piece: prophetic picture -> verse, verse picture -> declaration, declaration picture -> prophetic word
+function capText(kind){return dayText(kind==='art'?'verse':kind==='verse'?'decl':'art')}
 function wrapLines(x,text,maxW){const out=[];String(text).split('\n').forEach(par=>{let cur='';par.split(/\s+/).filter(Boolean).forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>maxW&&cur){out.push(cur);cur=w}else cur=t});out.push(cur)});return out}
 function dayCard(kind){
   if(kind==='art'&&window.dayArt)return new Promise(res=>window.dayArt(dayIdx()).toBlob(b=>res(b),'image/png'));
@@ -250,7 +252,7 @@ document.addEventListener('click',async e=>{
     if(mode==='save'){const bl=await dayCard(kind),a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='picture-of-the-day.png';document.body.appendChild(a);a.click();a.remove();say('Saved ✓');return}
     if(mode==='pic'){
       say('Making picture…');const bl=await dayCard(kind),f=new File([bl],kind==='verse'?'verse-of-the-day.png':kind==='art'?'picture-of-the-day.png':'declaration-of-the-day.png',{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text});return}
+      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:capText(kind)});return}
       const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=f.name;document.body.appendChild(a);a.click();a.remove();say('Saved ✓ Share it from your gallery');return;
     }
     if(navigator.share){await navigator.share({text});return}
