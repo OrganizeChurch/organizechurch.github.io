@@ -2,46 +2,46 @@
 (function(){
 const W=1080;
 const PIC=[
- ['THE LORD IS YOUR SHEPHERD, YOU SHALL NOT WANT','Psalm 23:1'],
- ['YOU CAN DO ALL THINGS THROUGH CHRIST WHO STRENGTHENS YOU','Philippians 4:13'],
- ['TRUST THE LORD, HE IS DIRECTING YOUR STEPS','Proverbs 3:5'],
- ['CAST EVERY BURDEN ON HIM, HE CARES FOR YOU','1 Peter 5:7'],
- ['LOVE FLOWS THROUGH YOU, SOMEONE WILL SEE CHRIST IN YOU TODAY','Mark 12:31'],
- ['REJOICE! THE JOY OF THE LORD IS YOUR STRENGTH','Philippians 4:4'],
- ['BE STRONG AND COURAGEOUS, THE LORD IS WITH YOU','Joshua 1:9'],
- ['FEAR NOT, GOD IS WITH YOU AND HE WILL HOLD YOU UP','Isaiah 41:10'],
- ['HIS PLANS FOR YOU ARE PLANS OF PEACE, HOPE AND A BRIGHT FUTURE','Jeremiah 29:11'],
- ['ALL THINGS ARE WORKING TOGETHER FOR YOUR GOOD','Romans 8:28'],
- ['GOD IS YOUR REFUGE, A VERY PRESENT HELP IN TROUBLE','Psalm 46:1'],
- ['YOUR GOD SHALL SUPPLY ALL YOUR NEEDS','Philippians 4:19'],
- ['NO WEAPON FORMED AGAINST YOU SHALL PROSPER','Isaiah 54:17'],
- ['THE LORD IS YOUR LIGHT, WHOM SHALL YOU FEAR?','Psalm 27:1'],
- ['LET GO AND REST, YOUR SHEPHERD IS LEADING YOU TO PEACE', 'Psalm 23:2'],
- ['YOUR STRENGTH IS BEING RENEWED, YOU WILL SOAR AGAIN', 'Isaiah 40:31'],
- ['A NEW DAY, NEW MERCIES, GREAT IS HIS FAITHFULNESS OVER YOU', 'Lamentations 3:22-23'],
- ['PUT GOD FIRST AND EVERY NEED IN YOUR LIFE WILL BE ADDED', 'Matthew 6:33'],
- ['YOUR HELP IS COMING FROM THE LORD', 'Psalm 121:1-2'],
- ['YOU ARE COVERED AND HIDDEN IN THE SHADOW OF THE ALMIGHTY', 'Psalm 91:1'],
- ['YOU ARE LOVED BEYOND MEASURE, SALVATION IS YOURS', 'John 3:16'],
- ['COME AND REST, YOUR BURDENS ARE LIFTED TODAY', 'Matthew 11:28'],
- ['YOUR HOME AND YOUR HOUSEHOLD ARE BLESSED OF THE LORD', 'Joshua 24:15'],
- ['YOUR CHILDREN ARE BLESSED AND THEIR FUTURE IS BRIGHT', 'Psalm 127:3'],
- ['YOU WILL BEAR FRUIT AND WHATEVER YOU DO SHALL PROSPER', 'Psalm 1:3'],
- ['HEALING AND RESTORATION ARE FLOWING TO YOU TODAY', 'Jeremiah 30:17'],
- ['THE PEACE OF CHRIST GUARDS YOUR HEART AND MIND TODAY', 'John 14:27'],
- ['YOUR FAITH IS BIGGER THAN ANY MOUNTAIN IN YOUR WAY', 'Hebrews 11:1'],
- ['ASK HIM, GOD IS GIVING YOU WISDOM FOR EVERY DECISION', 'James 1:5'],
- ['CALL ON HIM TODAY, HE WILL ANSWER AND SHOW YOU GREAT THINGS', 'Jeremiah 33:3'],
- ['GOD IS MAKING A WAY WHERE THERE IS NO WAY', 'Isaiah 43:19'],
- ['THE DOOR GOD HAS OPENED FOR YOU, NO ONE CAN SHUT', 'Revelation 3:8'],
- ['FAVOUR SURROUNDS YOU LIKE A SHIELD', 'Psalm 5:12'],
- ['VICTORY IS YOURS THROUGH JESUS CHRIST', '1 Corinthians 15:57'],
- ['YOUR NIGHT IS ENDING, JOY IS COMING IN THE MORNING', 'Psalm 30:5'],
- ['THE GOD OF HOPE IS FILLING YOU WITH JOY AND PEACE', 'Romans 15:13'],
- ['HIS GRACE IS ENOUGH, HIS STRENGTH IS MADE PERFECT IN YOUR WEAKNESS', '2 Corinthians 12:9'],
- ['YOU WERE CREATED ON PURPOSE FOR GOOD WORKS', 'Ephesians 2:10'],
- ['YOUR HOPE IN CHRIST IS AN ANCHOR, SURE AND STEADFAST', 'Hebrews 6:19'],
- ['LET YOUR LIGHT SHINE, SOMEONE IS FOLLOWING THE LIGHT IN YOU', 'Matthew 5:16']
+ ['THE LORD IS YOUR SHEPHERD. YOU SHALL NOT WANT.','Psalm 23:1'],
+ ['RISE UP IN STRENGTH. YOU CAN DO ALL THINGS THROUGH CHRIST.','Philippians 4:13'],
+ ['TRUST HIM FULLY. EVERY STEP YOU TAKE IS ORDERED.','Proverbs 3:5'],
+ ['RELEASE EVERY BURDEN TO HIM. HE CARES FOR YOU.','1 Peter 5:7'],
+ ['RECEIVE FRESH LOVE FROM HEAVEN. IT FLOWS THROUGH YOU TODAY.','Mark 12:31'],
+ ['RECEIVE UNSHAKEABLE JOY. IT IS YOUR STRENGTH.','Philippians 4:4'],
+ ['BE BOLD AND COURAGEOUS. THE LORD GOES WITH YOU.','Joshua 1:9'],
+ ['FEAR HAS NO PLACE HERE. GOD HOLDS YOU UP.','Isaiah 41:10'],
+ ['RECEIVE A BRIGHT FUTURE. IT IS YOUR PORTION.','Jeremiah 29:11'],
+ ['EVERYTHING IS TURNING AROUND FOR YOUR GOOD. THIS IS YOUR SEASON.','Romans 8:28'],
+ ['RUN TO HIM TODAY. HE IS YOUR STRONG REFUGE.','Psalm 46:1'],
+ ['RECEIVE ABUNDANT PROVISION. EVERY NEED IS MET.','Philippians 4:19'],
+ ['EVERY WEAPON AGAINST YOU IS DISARMED. YOU SHALL PROSPER.','Isaiah 54:17'],
+ ['WALK IN HIS LIGHT. FEAR HAS NO POWER OVER YOU.','Psalm 27:1'],
+ ['RECEIVE DIVINE REST. YOUR SOUL IS RESTORED.', 'Psalm 23:2'],
+ ['RECEIVE FRESH STRENGTH. YOU SHALL SOAR LIKE EAGLES.', 'Isaiah 40:31'],
+ ['RECEIVE NEW MERCIES TODAY. HIS FAITHFULNESS IS YOURS.', 'Lamentations 3:22-23'],
+ ['SEEK HIM FIRST. EVERYTHING ELSE IS ADDED TO YOU.', 'Matthew 6:33'],
+ ['LIFT YOUR EYES. HELP IS ON THE WAY.', 'Psalm 121:1-2'],
+ ['YOU ARE HIDDEN IN HIS SHADOW. NO EVIL SHALL TOUCH YOU.', 'Psalm 91:1'],
+ ['RECEIVE LOVE WITHOUT LIMIT. YOU ARE CHOSEN AND LOVED.', 'John 3:16'],
+ ['COME AS YOU ARE. RECEIVE HIS REST TODAY.', 'Matthew 11:28'],
+ ['YOUR HOUSE IS BLESSED. PEACE REIGNS IN YOUR HOME.', 'Joshua 24:15'],
+ ['YOUR CHILDREN ARE A HERITAGE. THEIR FUTURE IS BRIGHT.', 'Psalm 127:3'],
+ ['YOU SHALL BEAR FRUIT. WHATEVER YOU DO SHALL PROSPER.', 'Psalm 1:3'],
+ ['RECEIVE YOUR HEALING NOW. HEALTH IS YOUR PORTION.', 'Jeremiah 30:17'],
+ ['RECEIVE HIS PEACE. IT IS YOUR PORTION.', 'John 14:27'],
+ ['SPEAK TO THE MOUNTAIN. IT MUST MOVE.', 'Hebrews 11:1'],
+ ['RECEIVE EXTRAORDINARY WISDOM FROM GOD. IT IS YOUR PORTION.', 'James 1:5'],
+ ['CALL ON HIM TODAY. HE WILL SHOW YOU GREAT THINGS.', 'Jeremiah 33:3'],
+ ['A NEW THING IS SPRINGING UP. HE MAKES A WAY FOR YOU.', 'Isaiah 43:19'],
+ ['THE DOOR IS OPEN. NO ONE CAN SHUT IT.', 'Revelation 3:8'],
+ ['RECEIVE EXTRAORDINARY FAVOUR. IT SURROUNDS YOU LIKE A SHIELD.', 'Psalm 5:12'],
+ ['VICTORY IS YOURS. THE BATTLE IS ALREADY WON.', '1 Corinthians 15:57'],
+ ['YOUR NIGHT IS OVER. JOY COMES IN THE MORNING.', 'Psalm 30:5'],
+ ['BE FILLED WITH HOPE. JOY AND PEACE OVERFLOW IN YOU.', 'Romans 15:13'],
+ ['HIS GRACE IS ENOUGH. HIS POWER RESTS ON YOU.', '2 Corinthians 12:9'],
+ ['YOU WERE CREATED ON PURPOSE. RISE INTO YOUR DESTINY.', 'Ephesians 2:10'],
+ ['HOLD ON TO HOPE. IT ANCHORS YOUR SOUL.', 'Hebrews 6:19'],
+ ['SHINE BRIGHT TODAY. SOMEONE IS FOLLOWING YOUR LIGHT.', 'Matthew 5:16']
 ];
 const rng=seed=>{let s=(seed*9301+49297)%233280;return()=>{s=(s*9301+49297)%233280;return s/233280}};
 const lg=(x,stops,y0,y1)=>{const g=x.createLinearGradient(0,y0==null?0:y0,0,y1==null?W:y1);stops.forEach(s=>g.addColorStop(s[0],s[1]));return g};
@@ -55,13 +55,57 @@ function stars(x,n,seed,ymax,a){const r=rng(seed);for(let i=0;i<n;i++){const s=r
 function cloud(x,cx,cy,s,rgb,a){x.fillStyle=`rgba(${rgb},${a})`;[[0,0,60],[55,-18,48],[-58,-8,42],[105,6,38],[-105,10,34]].forEach(c=>{x.beginPath();x.ellipse(cx+c[0]*s,cy+c[1]*s,c[2]*s,c[2]*s*.62,0,0,7);x.fill()})}
 function bird(x,cx,cy,s,col){x.strokeStyle=col;x.lineWidth=3.2*s;x.lineCap='round';x.beginPath();x.moveTo(cx-16*s,cy-4*s);x.quadraticCurveTo(cx-8*s,cy-14*s,cx,cy);x.quadraticCurveTo(cx+8*s,cy-14*s,cx+16*s,cy-4*s);x.stroke()}
 function sheep(x,cx,cy,s,body,dark){x.fillStyle=dark;[-22,22].forEach(dx=>{x.fillRect(cx+dx*s-3*s,cy,6*s,20*s)});x.fillStyle=body;[[-26,-8,18],[0,-14,22],[26,-8,18],[-12,2,16],[14,2,16]].forEach(c=>{x.beginPath();x.arc(cx+c[0]*s,cy+c[1]*s,c[2]*s,0,7);x.fill()});x.fillStyle=dark;x.beginPath();x.ellipse(cx+40*s,cy-6*s,11*s,14*s,.3,0,7);x.fill();x.fillRect(cx+46*s,cy-18*s,4*s,8*s)}
-function man(x,cx,cy,s,col,o){o=o||{};x.fillStyle=col;x.strokeStyle=col;x.lineCap='round';x.lineJoin='round';
- x.beginPath();x.arc(cx,cy-172*s,15*s,0,7);x.fill();
- x.beginPath();x.moveTo(cx-17*s,cy-150*s);x.lineTo(cx+17*s,cy-150*s);x.lineTo(cx+36*s,cy);x.lineTo(cx-36*s,cy);x.closePath();x.fill();
- if(o.staff){x.lineWidth=5*s;x.beginPath();x.moveTo(cx+48*s,cy);x.lineTo(cx+48*s,cy-215*s);x.arc(cx+30*s,cy-215*s,18*s,0,Math.PI*1.1,true);x.stroke();x.lineWidth=9*s;x.beginPath();x.moveTo(cx+17*s,cy-140*s);x.lineTo(cx+46*s,cy-110*s);x.stroke()}
- if(o.arms){x.lineWidth=10*s;x.beginPath();x.moveTo(cx-15*s,cy-142*s);x.lineTo(cx-58*s,cy-205*s);x.moveTo(cx+15*s,cy-142*s);x.lineTo(cx+58*s,cy-205*s);x.stroke()}
- if(o.lantern){x.lineWidth=8*s;x.beginPath();x.moveTo(cx+15*s,cy-140*s);x.lineTo(cx+52*s,cy-112*s);x.stroke();x.fillStyle='#ffe9a8';x.fillRect(cx+46*s,cy-108*s,14*s,20*s);x.fillStyle=col}
+// ---- human silhouettes: person(ctx, centreX, feetY, height, colour, pose, opts) ----
+// poses: stand, raise, reach, pray, kneel, walk, read, wave ; opts.f = woman (dress+hair), opts.kid = child, opts.glow = rgb string, opts.flip = mirror
+function person(x,cx,fy,h,col,pose,o){o=o||{};const H=h,fl=o.flip?-1:1,P=(u,v)=>[cx+fl*u*H,fy-v*H];
+ const seg=(p,q,w1,w2)=>{const A=P(p[0],p[1]),B=P(q[0],q[1]),dx=B[0]-A[0],dy=B[1]-A[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,r1=w1*H/2,r2=w2*H/2;
+  x.beginPath();x.moveTo(A[0]+nx*r1,A[1]+ny*r1);x.lineTo(B[0]+nx*r2,B[1]+ny*r2);x.lineTo(B[0]-nx*r2,B[1]-ny*r2);x.lineTo(A[0]-nx*r1,A[1]-ny*r1);x.closePath();x.fill();
+  x.beginPath();x.arc(A[0],A[1],r1,0,7);x.fill();x.beginPath();x.arc(B[0],B[1],r2,0,7);x.fill()};
+ const arm=(s0,e,hd,w)=>{seg(s0,e,w,w*.82);seg(e,hd,w*.82,w*.6);const q=P(hd[0],hd[1]);x.beginPath();x.arc(q[0],q[1],w*H*.5,0,7);x.fill()};
+ const leg=(hp,kn,an,w)=>{seg(hp,kn,w,w*.72);seg(kn,an,w*.72,w*.5);const q=P(an[0]+.025,an[1]);x.beginPath();x.ellipse(q[0],q[1],.04*H,.017*H,0,0,7);x.fill()};
+ x.save();x.fillStyle=col;x.strokeStyle=col;
+ if(o.glow){const g=x.createRadialGradient(cx,fy-H*.6,0,cx,fy-H*.6,H*1.0);g.addColorStop(0,`rgba(${o.glow},.42)`);g.addColorStop(1,`rgba(${o.glow},0)`);x.fillStyle=g;x.fillRect(cx-H*1.1,fy-H*1.7,2.2*H,2.2*H);x.fillStyle=col}
+ const kn=pose==='kneel',fem=!!o.f;
+ const shY=kn?.66:.84,hipY=kn?.30:.51,sw=fem?.078:.095;
+ // legs
+ if(!fem||kn){
+  if(kn){leg([-.03,hipY],[.14,.06],[-.06,.012],.075);leg([.03,hipY],[.2,.05],[-.0,.012],.07)}
+  else if(pose==='walk'){leg([-.025,hipY],[-.09,.27],[-.16,.02],.08);leg([.025,hipY],[.08,.26],[.15,.025],.08)}
+  else{leg([-.03,hipY],[-.05,.27],[-.055,.02],.08);leg([.03,hipY],[.05,.27],[.055,.02],.08)}
+ }
+ // torso
+ x.beginPath();
+ x.moveTo(...P(-.02,shY+.035));x.quadraticCurveTo(...P(-sw*.7,shY+.03),...P(-sw,shY-.015));
+ x.quadraticCurveTo(...P(-sw*1.02,shY-.1),...P(-(sw-.012),shY-.19));
+ x.quadraticCurveTo(...P(-(fem?.05:.075),shY-.27),...P(-(fem?.06:.085),hipY));
+ if(fem&&!kn){x.quadraticCurveTo(...P(-.12,.28),...P(-.185,.04));x.quadraticCurveTo(...P(-.1,.015),...P(0,.03));x.quadraticCurveTo(...P(.1,.015),...P(.185,.04));x.quadraticCurveTo(...P(.12,.28),...P(.06,hipY))}
+ else{x.lineTo(...P(.085,hipY))}
+ x.quadraticCurveTo(...P((fem?.05:.075),shY-.27),...P((sw-.012),shY-.19));
+ x.quadraticCurveTo(...P(sw*1.02,shY-.1),...P(sw,shY-.015));
+ x.quadraticCurveTo(...P(sw*.7,shY+.03),...P(.02,shY+.035));
+ x.closePath();x.fill();
+ if(fem&&kn){x.beginPath();x.moveTo(...P(-.08,hipY));x.quadraticCurveTo(...P(.1,hipY+.04),...P(.24,.04));x.lineTo(...P(-.12,.0));x.closePath();x.fill()}
+ // neck + head
+ const bow=!!o.bow||kn||pose==='pray',hr=o.kid?.062:.05,hy=shY+.07+(bow?-.005:0),hx=bow?.012:0;
+ seg([0,shY+.01],[hx*.5,shY+.065],.036,.032);
+ const hp=P(hx,hy);x.beginPath();x.ellipse(hp[0],hp[1],hr*H,hr*H*1.15,0,0,7);x.fill();
+ if(fem){x.beginPath();x.ellipse(hp[0]-fl*.012*H,hp[1]-.004*H,hr*H*1.18,hr*H*1.3,0,0,7);x.fill();x.beginPath();x.moveTo(...P(hx-.035,hy));x.quadraticCurveTo(...P(hx-.115,hy-.08),...P(hx-.07,hy-.19));x.quadraticCurveTo(...P(hx-.03,hy-.13),...P(hx+.01,hy-.06));x.fill()}
+ // arms
+ const L=[-sw+.005,shY-.03],R=[sw-.005,shY-.03],aw=.05;
+ if(pose==='raise'){arm(L,[-.17,shY+.07],[-.21,shY+.2],aw);arm(R,[.17,shY+.07],[.21,shY+.2],aw)}
+ else if(pose==='reach'){arm(L,[-.13,shY-.14],[-.14,shY-.28],aw);arm(R,[.15,shY+.03],[.21,shY+.17],aw)}
+ else if(pose==='pray'||pose==='kneel'){arm(L,[-.09,shY-.14],[.008,shY-.06],aw);arm(R,[.09,shY-.14],[.008,shY-.06],aw)}
+ else if(pose==='read'){arm(L,[-.1,shY-.15],[-.012,shY-.16],aw);arm(R,[.1,shY-.15],[.012,shY-.16],aw);x.fillStyle=o.book||'#f5e6b8';x.save();x.translate(...P(0,shY-.17));x.rotate(-.1*fl);x.fillRect(-.07*H,-.045*H,.14*H,.09*H);x.restore();x.fillStyle=col}
+ else if(pose==='walk'){arm(L,[-.13,shY-.15],[-.09,shY-.27],aw);arm(R,[.11,shY-.15],[.14,shY-.27],aw)}
+ else if(pose==='wave'){arm(L,[-.12,shY-.15],[-.13,shY-.29],aw);arm(R,[.15,shY+.0],[.17,shY+.15],aw)}
+ else{arm(L,[-.12,shY-.15],[-.13,shY-.29],aw);arm(R,[.12,shY-.15],[.13,shY-.29],aw)}
+ if(o.staff){x.lineWidth=.017*H;x.lineCap='round';const t=P(.15,.02),u=P(.15,1.04);x.beginPath();x.moveTo(t[0],t[1]);x.lineTo(u[0],u[1]);x.stroke();const c=P(.105,1.04);x.beginPath();x.arc(c[0],c[1],.045*H,fl>0?0:Math.PI,fl>0?Math.PI*1.15:Math.PI*(-.15),fl<0);x.stroke()}
+ if(o.lantern){const q=P(.14,.5);x.fillStyle='#ffe3a0';x.shadowColor='rgba(255,220,140,.9)';x.shadowBlur=.08*H;x.fillRect(q[0]-.025*H,q[1],.05*H,.07*H);x.shadowBlur=0}
+ x.restore();
 }
+// old scenes call man(): now they get the same smooth human silhouettes
+function man(x,cx,cy,s,col,o){o=o||{};person(x,cx,cy,190*s,col,o.arms?'raise':'stand',{f:o.f,kid:o.kid,staff:o.staff,lantern:o.lantern,glow:o.glow})}
+
 function cross(x,cx,cy,s,col){x.fillStyle=col;x.fillRect(cx-6*s,cy-48*s,12*s,96*s);x.fillRect(cx-28*s,cy-26*s,56*s,12*s)}
 function tree(x,cx,cy,s,col){x.fillStyle=col;x.fillRect(cx-6*s,cy-60*s,12*s,60*s);[[0,-100,46],[-30,-74,34],[32,-76,36],[0,-60,36]].forEach(c=>{x.beginPath();x.arc(cx+c[0]*s,cy+c[1]*s,c[2]*s,0,7);x.fill()})}
 function wheat(x,cx,cy,s,col){x.strokeStyle=col;x.fillStyle=col;x.lineWidth=2.5*s;x.beginPath();x.moveTo(cx,cy);x.quadraticCurveTo(cx+4*s,cy-45*s,cx+6*s,cy-80*s);x.stroke();for(let i=0;i<6;i++){x.beginPath();x.ellipse(cx+(i%2?5:-1)*s+6*s*(i/6),cy-(80-i*7)*s,3.6*s,8*s,i%2?.6:-.6,0,7);x.fill()}}
@@ -168,6 +212,7 @@ const SH2=[-240,0,-100,-120,-200,-240,-80,-200,-180,-160,-150,-100,-100,-200,-17
 SH2.forEach(v=>SH.push(v));
 
 function wrap(x,t,maxW){const out=[];let cur='';t.split(/\s+/).forEach(w=>{const s=cur?cur+' '+w:w;if(x.measureText(s).width>maxW&&cur){out.push(cur);cur=w}else cur=s});out.push(cur);return out}
+function bwrap(x,t,m){const g=wrap(x,t,m),n=g.length;if(n<2)return g;let lo=m*.45,hi=m;for(let k=0;k<14;k++){const mid=(lo+hi)/2;if(wrap(x,t,mid).length<=n)hi=mid;else lo=mid}return wrap(x,t,hi)}
 let logoImg=null,logoReady=false;
 function loadLogo(){
   if(logoImg||typeof LOGO==='undefined')return;
@@ -176,28 +221,148 @@ function loadLogo(){
   logoImg.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(LOGO.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ').replace('width="34" height="34"','width="200" height="200"'));
 }
 const cache={};
+// extra people drawn large in front of each scene: [pose, x, feetY, height, options]
+const N='#050a24',D='#12072a',G='160,190,255',Wm='255,226,170';
+const FIG={
+ 2:[['stand',820,660,270,{col:D,glow:Wm}]],
+ 3:[['pray',280,665,300,{col:N,glow:G}]],
+ 6:[['raise',800,660,300,{col:D,glow:Wm}]],
+ 4:[['stand',470,660,250,{col:D,glow:Wm}],['stand',565,660,235,{col:D,f:1,glow:Wm}],['stand',640,660,150,{col:D,kid:1}]],
+ 5:[['raise',540,660,330,{col:D,glow:Wm}]],
+ 8:[['walk',540,700,210,{col:D,glow:Wm}]],
+ 9:[['reach',540,720,250,{col:'#02140c',glow:'255,240,180'}]],
+ 10:[['pray',250,650,260,{col:N,glow:G}]],
+ 11:[['raise',330,670,320,{col:'#1d0f06',f:1,glow:Wm}]],
+ 13:[['stand',800,670,270,{col:N,glow:G,lantern:1}]],
+ 14:[['pray',290,660,290,{col:'#0a1a1c',f:1,glow:Wm}]],
+ 17:[['walk',540,700,220,{col:D,glow:Wm}]],
+ 18:[['raise',290,700,290,{col:N,glow:G}]],
+ 19:[['pray',250,700,260,{col:D,f:1,glow:Wm}]],
+ 15:[['raise',540,655,200,{col:N,glow:G}]],
+ 16:[['raise',800,665,300,{col:D,f:1,glow:Wm}]],
+ 20:[['reach',330,700,300,{col:N,glow:'255,226,170'}]],
+ 22:[['stand',330,700,250,{col:D,glow:Wm}],['stand',420,700,235,{col:D,f:1,glow:Wm}],['stand',490,700,150,{col:D,kid:1}]],
+ 23:[['wave',300,700,270,{col:'#07200f',f:1}],['raise',390,700,190,{col:'#07200f',kid:1}]],
+ 24:[['reach',800,715,250,{col:'#02140c',f:1,glow:'255,240,180'}]],
+ 25:[['raise',290,700,290,{col:D,glow:Wm}]],
+ 26:[['pray',290,650,270,{col:N,f:1,glow:G}]],
+ 27:[['reach',290,700,260,{col:'#08120c',glow:'200,255,200'}]],
+ 28:[['read',820,700,290,{col:N,glow:'255,240,190'}]],
+ 29:[['raise',290,700,290,{col:D,glow:Wm}]],
+ 30:[['walk',300,720,250,{col:D,glow:Wm}]],
+ 31:[['stand',540,725,250,{col:'#0b0620',glow:'255,236,190'}]],
+ 34:[['raise',300,700,300,{col:D,glow:Wm}]],
+ 36:[['pray',820,700,260,{col:N,glow:G}]],
+ 37:[['raise',540,700,260,{col:N,glow:'255,240,200'}]],
+ 38:[['pray',840,700,250,{col:N,f:1,glow:G}]],
+ 35:[['raise',470,700,270,{col:'#052010',f:1}],['raise',570,700,170,{col:'#052010',kid:1}]],
+ 39:[['raise',300,700,270,{col:N,glow:'255,226,150',f:1}]]
+};
+const FIGSKIP={};
+function spark(x,cx,cy,r,a){x.save();x.globalAlpha=a;x.fillStyle='#fff';x.shadowColor='rgba(255,255,255,.9)';x.shadowBlur=r*1.2;x.beginPath();x.moveTo(cx,cy-r);x.quadraticCurveTo(cx,cy,cx+r*.62,cy);x.quadraticCurveTo(cx,cy,cx,cy+r);x.quadraticCurveTo(cx,cy,cx-r*.62,cy);x.quadraticCurveTo(cx,cy,cx,cy-r);x.fill();x.restore()}
+function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+let grain=null;
+function grainPat(x){if(grain)return grain;const g=document.createElement('canvas');g.width=g.height=180;const gx=g.getContext('2d'),im=gx.createImageData(180,180),r=rng(7);for(let i=0;i<im.data.length;i+=4){const v=r()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}gx.putImageData(im,0,0);grain=x.createPattern(g,'repeat');return grain}
+// Gen-Z finish: aura colour wash, glow bloom, sparkles, film grain, vignette
+function finish(x,i){
+  x.save();
+  x.globalCompositeOperation='soft-light';let g=x.createLinearGradient(0,0,W,W);g.addColorStop(0,'rgba(0,225,255,.55)');g.addColorStop(.5,'rgba(150,80,255,.25)');g.addColorStop(1,'rgba(255,60,170,.6)');x.fillStyle=g;x.fillRect(0,0,W,W);
+  x.globalCompositeOperation='screen';[[170,170,420,'255,90,180',.26],[930,260,420,'80,210,255',.24]].forEach(c=>glow(x,c[0],c[1],c[2],c[3],c[4]));
+  x.globalCompositeOperation='source-over';
+  const r=rng(i*13+5);for(let k=0;k<16;k++){spark(x,40+r()*(W-80),60+r()*480,7+r()*17,.35+r()*.6)}
+  x.globalCompositeOperation='overlay';x.globalAlpha=.1;x.fillStyle=grainPat(x);x.fillRect(0,0,W,W);x.globalAlpha=1;
+  x.globalCompositeOperation='source-over';
+  g=x.createRadialGradient(W/2,W*.45,W*.35,W/2,W*.45,W*.8);g.addColorStop(0,'rgba(8,4,40,0)');g.addColorStop(1,'rgba(8,4,40,.4)');x.fillStyle=g;x.fillRect(0,0,W,W);
+  x.restore();
+}
 function dayArt(i){
   const n=PIC.length;i=((i%n)+n)%n;loadLogo();
   const key=i+(logoReady?'L':'');if(cache[key])return cache[key];
   const c=document.createElement('canvas');c.width=W;c.height=W;const x=c.getContext('2d');
   x.save();x.translate(0,SH[i]);try{SC[i](x)}catch(e){x.fillStyle='#1d3a8a';x.fillRect(0,0,W,W)}x.restore();if(SH[i]<0)x.drawImage(c,0,W+SH[i]-2,W,1,0,W+SH[i]-1,W,-SH[i]+2);
-  // readability scrim + words
-  x.fillStyle=lg(x,[[0,'rgba(4,10,36,0)'],[1,'rgba(4,10,36,.9)']],520,W);x.fillRect(0,520,W,W-520);
-  x.fillStyle=lg(x,[[0,'rgba(4,10,36,.45)'],[1,'rgba(4,10,36,0)']],0,200);x.fillRect(0,0,W,200);
+  // layout first, so people can stand on top of the card
+  const [line,ref]=PIC[i],cut=line.indexOf('. '),A=cut>0?line.slice(0,cut+1):line,B=cut>0?line.slice(cut+2):'';
+  let fs=74,la,lb,lh;const MW=W-210;
+  for(;fs>=40;fs-=2){x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';la=bwrap(x,A,MW);x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';lb=B?bwrap(x,B,MW):[];lh=fs*1.16;if(la.length+lb.length<=5&&(la.length+lb.length)*lh<=330)break}
+  const tot=(la.length+lb.length)*lh,cardH=tot+104,cardB=905,cardT=cardB-cardH,cx0=48,cw=W-96;
+  (FIG[i]||[]).forEach(f=>{const o=f[4],hh=Math.min(f[3]*(f[0]==='kneel'?1.15:1.12),cardT-150);person(x,f[1],cardT+10,hh,o.col||N,f[0],o)});
+  finish(x,i);
+  // soft top + bottom shading
+  x.fillStyle=lg(x,[[0,'rgba(6,4,40,.55)'],[1,'rgba(6,4,40,0)']],0,210);x.fillRect(0,0,W,210);
+  x.fillStyle=lg(x,[[0,'rgba(6,4,40,0)'],[1,'rgba(6,4,40,.85)']],560,W);x.fillRect(0,560,W,W-560);
   x.textAlign='center';x.textBaseline='alphabetic';
-  x.fillStyle='rgba(255,255,255,.95)';x.font='700 30px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='7px';x.fillText('PROPHETIC WORD OF THE DAY',W/2,78);if('letterSpacing' in x)x.letterSpacing='0px';
-  const [line,ref]=PIC[i];let fs=72,lines;
-  for(;fs>=40;fs-=2){x.font='800 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';lines=wrap(x,line,W-150);if(lines.length<=4&&lines.length*fs*1.18<=260)break}
-  const lh=fs*1.18,bh=lines.length*lh,y0=915-bh+fs*.85;
-  x.shadowColor='rgba(0,0,0,.55)';x.shadowBlur=14;x.shadowOffsetY=3;x.fillStyle='#fff';lines.forEach((ln,k)=>x.fillText(ln,W/2,y0+k*lh));x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;
-  x.fillStyle='#9bd8ff';x.font='700 34px Arial, Helvetica, sans-serif';x.fillText('— '+ref+' (KJV)',W/2,Math.min(970,y0+bh-lh+fs*.2+52));
-  x.fillStyle='rgba(255,255,255,.14)';x.fillRect(0,W-84,W,84);
-  const txt='OrganizeChurch  ·  organizechurch.github.io';x.font='700 29px Arial, Helvetica, sans-serif';x.fillStyle='#fff';
-  const tw=x.measureText(txt).width,lx=(W-tw-(logoReady?60:0))/2;
-  if(logoReady)x.drawImage(logoImg,lx,W-76,60,60);
-  x.textAlign='left';x.fillText(txt,lx+(logoReady?72:0),W-34);x.textAlign='center';
+  // top pill
+  const tl='PROPHETIC WORD OF THE DAY';x.font='800 25px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='5px';
+  const tw0=x.measureText(tl).width,pw=tw0+130,px=(W-pw)/2;
+  rr(x,px,40,pw,60,30);x.fillStyle='rgba(255,255,255,.16)';x.fill();x.lineWidth=2.5;x.strokeStyle='rgba(255,255,255,.6)';x.stroke();
+  x.fillStyle='#fff';x.fillText(tl,W/2+2,78);if('letterSpacing' in x)x.letterSpacing='0px';
+  spark(x,px+34,70,11,1);spark(x,px+pw-34,70,11,1);
+  // glass card
+  x.save();x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=40;x.shadowOffsetY=14;rr(x,cx0,cardT,cw,cardH,44);x.fillStyle='rgba(14,8,52,.52)';x.fill();x.restore();
+  let g=x.createLinearGradient(cx0,cardT,cx0+cw,cardT+cardH);g.addColorStop(0,'rgba(255,255,255,.2)');g.addColorStop(.5,'rgba(255,255,255,.04)');g.addColorStop(1,'rgba(255,255,255,.14)');rr(x,cx0,cardT,cw,cardH,44);x.fillStyle=g;x.fill();
+  g=x.createLinearGradient(cx0,cardT,cx0+cw,cardT+cardH);g.addColorStop(0,'#5ef0ff');g.addColorStop(.5,'#c07bff');g.addColorStop(1,'#ff7ac8');rr(x,cx0,cardT,cw,cardH,44);x.lineWidth=3.5;x.strokeStyle=g;x.stroke();
+  let y=cardT+52+fs*.8;
+  x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=12;x.shadowOffsetY=3;
+  x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';x.fillStyle='#fff';la.forEach(t=>{x.fillText(t,W/2,y);y+=lh});
+  x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';
+  lb.forEach(t=>{const w=x.measureText(t).width,gg=x.createLinearGradient(W/2-w/2,0,W/2+w/2,0);gg.addColorStop(0,'#ffe27a');gg.addColorStop(.55,'#ffb27a');gg.addColorStop(1,'#ff7ac8');x.fillStyle=gg;x.fillText(t,W/2,y);y+=lh});
+  x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;
+  // reference pill
+  const rt=ref.toUpperCase()+'  ·  KJV';x.font='800 28px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='3px';
+  const rw=x.measureText(rt).width+80,rx=(W-rw)/2,ry=cardB-30;
+  g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
+  x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=24;rr(x,rx,ry,rw,60,30);x.fillStyle=g;x.fill();x.restore();
+  x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+40);if('letterSpacing' in x)x.letterSpacing='0px';
+  // footer
+  const txt='OrganizeChurch  ·  organizechurch.github.io';x.font='700 27px Arial, Helvetica, sans-serif';x.fillStyle='rgba(255,255,255,.95)';
+  const tw=x.measureText(txt).width,lx=(W-tw-(logoReady?58:0))/2;
+  if(logoReady)x.drawImage(logoImg,lx,W-80,52,52);
+  x.textAlign='left';x.fillText(txt,lx+(logoReady?66:0),W-44);x.textAlign='center';
   cache[key]=c;return c;
 }
+
+// Verse / Declaration share pictures in the same Gen-Z style (portrait 1080 x 1350)
+function dayCardArt(kind,v){
+  loadLogo();const H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const isV=kind==='verse';
+  let g=x.createLinearGradient(0,0,W,H);
+  if(isV){g.addColorStop(0,'#1b2a8f');g.addColorStop(.5,'#6a3fd0');g.addColorStop(1,'#d8478f')}else{g.addColorStop(0,'#3b1670');g.addColorStop(.45,'#d8478f');g.addColorStop(1,'#ff9a5a')}
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.globalCompositeOperation='screen';[[180,200,520,isV?'80,210,255':'255,200,120',.4],[920,1000,560,isV?'255,100,190':'120,200,255',.35],[900,160,360,'255,255,255',.14]].forEach(q=>{const gg=x.createRadialGradient(q[0],q[1],0,q[0],q[1],q[2]);gg.addColorStop(0,`rgba(${q[3]},${q[4]})`);gg.addColorStop(1,`rgba(${q[3]},0)`);x.fillStyle=gg;x.fillRect(0,0,W,H)});
+  x.globalCompositeOperation='source-over';
+  const r=rng(isV?21:34);for(let k=0;k<22;k++)spark(x,40+r()*(W-80),50+r()*(H-100),6+r()*16,.3+r()*.6);
+  x.globalCompositeOperation='overlay';x.globalAlpha=.1;x.fillStyle=grainPat(x);x.fillRect(0,0,W,H);x.globalAlpha=1;x.globalCompositeOperation='source-over';
+  x.textAlign='center';x.textBaseline='alphabetic';
+  // title pill
+  const tl=isV?'VERSE OF THE DAY':'DECLARATION OF THE DAY';x.font='800 30px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='6px';
+  const tw0=x.measureText(tl).width,pw=tw0+140,px=(W-pw)/2;
+  rr(x,px,70,pw,72,36);x.fillStyle='rgba(255,255,255,.18)';x.fill();x.lineWidth=3;x.strokeStyle='rgba(255,255,255,.65)';x.stroke();x.fillStyle='#fff';x.fillText(tl,W/2+3,119);if('letterSpacing' in x)x.letterSpacing='0px';
+  spark(x,px+40,106,13,1);spark(x,px+pw-40,106,13,1);
+  // body
+  const body=isV?['“'+v[0]+'”']:v[2].slice(0,-1),amen=isV?null:v[2][v[2].length-1];
+  const cx0=60,cw=W-120,cT=200,cB=1130,mw=cw-120;let fs=isV?76:50,lines,lh,tot;
+  for(;fs>=26;fs-=2){x.font=(isV?'italic 700 ':'700 ')+fs+'px '+(isV?'Georgia, "Times New Roman", serif':'Arial, Helvetica, sans-serif');lines=[];body.forEach(p=>bwrap(x,p,mw).forEach(l=>lines.push(l)));lh=fs*(isV?1.28:1.3);tot=lines.length*lh+(isV?0:lh*1.5);if(tot<=cB-cT-260)break}
+  const ch=tot+190,top=cT+((cB-cT)-ch)/2+20;
+  x.save();x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=44;x.shadowOffsetY=16;rr(x,cx0,top,cw,ch,56);x.fillStyle='rgba(14,6,56,.5)';x.fill();x.restore();
+  g=x.createLinearGradient(cx0,top,cx0+cw,top+ch);g.addColorStop(0,'rgba(255,255,255,.2)');g.addColorStop(.5,'rgba(255,255,255,.04)');g.addColorStop(1,'rgba(255,255,255,.14)');rr(x,cx0,top,cw,ch,56);x.fillStyle=g;x.fill();
+  g=x.createLinearGradient(cx0,top,cx0+cw,top+ch);g.addColorStop(0,'#5ef0ff');g.addColorStop(.5,'#c07bff');g.addColorStop(1,'#ff7ac8');rr(x,cx0,top,cw,ch,56);x.lineWidth=4;x.strokeStyle=g;x.stroke();
+  let y=top+80+fs*.8;x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=14;x.shadowOffsetY=3;x.fillStyle='#fff';
+  x.font=(isV?'italic 700 ':'700 ')+fs+'px '+(isV?'Georgia, "Times New Roman", serif':'Arial, Helvetica, sans-serif');
+  lines.forEach(t=>{x.fillText(t,W/2,y);y+=lh});
+  if(amen){y+=lh*.2;x.font='italic 700 '+Math.round(fs*1.1)+'px Georgia, "Times New Roman", serif';const w=x.measureText(amen).width,gg=x.createLinearGradient(W/2-w/2,0,W/2+w/2,0);gg.addColorStop(0,'#ffe27a');gg.addColorStop(.55,'#ffb27a');gg.addColorStop(1,'#ff7ac8');x.fillStyle=gg;x.fillText(amen,W/2,y)}
+  x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;
+  // reference pill
+  const rt=(isV?v[1].toUpperCase()+'  ·  KJV':'BASED ON '+v[1].toUpperCase());x.font='800 32px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='3px';
+  const rw=x.measureText(rt).width+96,rx=(W-rw)/2,ry=top+ch-34;
+  g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
+  x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=26;rr(x,rx,ry,rw,68,34);x.fillStyle=g;x.fill();x.restore();x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+46);if('letterSpacing' in x)x.letterSpacing='0px';
+  // footer
+  x.fillStyle='#fff';x.font='800 36px Arial, Helvetica, sans-serif';x.fillText('Get the OrganizeChurch app',W/2+(logoReady?0:0),H-130);
+  const txt='organizechurch.github.io';x.font='700 34px Arial, Helvetica, sans-serif';x.fillStyle='#ffe9a8';x.fillText(txt,W/2,H-80);
+  if(logoReady){x.drawImage(logoImg,70,H-200,92,92);x.drawImage(logoImg,W-162,H-200,92,92)}
+  return c;
+}
+window.dayCardArt=dayCardArt;window.dayArtReadyLogo=()=>{loadLogo();return logoReady};
 window.dayArt=dayArt;window.dayArtCount=PIC.length;window.dayArtLine=i=>PIC[((i%PIC.length)+PIC.length)%PIC.length];
 // fill any <canvas data-dayart> that appears on the page
 function fill(){document.querySelectorAll('canvas[data-dayart]').forEach(cv=>{const i=+cv.dataset.dayart;if(cv.dataset.done===String(i)+(logoReady?'L':''))return;cv.width=W;cv.height=W;cv.getContext('2d').drawImage(dayArt(i),0,0);cv.dataset.done=String(i)+(logoReady?'L':'')})}
