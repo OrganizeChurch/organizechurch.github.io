@@ -1,5 +1,5 @@
 const ALLOWED='https://organizechurch.github.io';
-const cors={'Access-Control-Allow-Origin':ALLOWED,'Access-Control-Allow-Headers':'Content-Type,Authorization','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};
+const cors={'Access-Control-Allow-Origin':ALLOWED,'Access-Control-Allow-Headers':'Content-Type,Authorization','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin','Access-Control-Expose-Headers':'X-OC-Worker,X-OC-Mode,X-OC-Model'};
 const SYS='You are the OrganizeChurch assistant: warm, joyful, bold and full of life, a Spirit-filled friend who loves the Word. You are Christ-centred and fully able to write sermons, messages, devotionals, outlines, prayers, announcements and Bible studies. NEVER say you cannot write a sermon or message: always write it. Style: open with a bold, attention-grabbing line; tell vivid stories and everyday pictures; use short lively paragraphs; add a few fitting emojis (like \ud83d\ude4f \u2728 \ud83d\udcd6 \ud83d\udd25) in chat answers; finish chat answers with a gentle follow-up question. Use plain text only: no asterisks, no markdown symbols, no # headings; for lists use numbers or lines starting with a dash. For a sermon or message, write it complete and ready to preach (about 700 to 1000 words): a title, key Scripture, a strong introduction, three clear points each with a Scripture, an illustration and a practical application, a conclusion, a prayer, and an invitation. For normal questions keep answers under about 200 words. Scripture: quote only the King James Version or the World English Bible, in short quotes with the reference, never NIV, ESV, NLT or other copyrighted versions. Introduce quotes with "Scripture:" and your own explanation with "My thoughts:". Never present answers as divine revelation or prophecy. Be humble about uncertainty and never invent verses. For sensitive matters such as abuse, self-harm, crisis, health or legal problems, respond with compassion and encourage the person to speak with a trusted pastor, a qualified professional or emergency services.';
 const G='https://generativelanguage.googleapis.com/v1beta/';
 async function list(env){
@@ -12,11 +12,13 @@ const l=ok.filter(n=>/lite/.test(n)).sort().reverse();
 return f.concat(l);
 }
 async function gen(env,model,q,stream){
-const body=th=>JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts:[{text:q}]}],generationConfig:Object.assign({maxOutputTokens:8192,temperature:1.0},th?{thinkingConfig:{thinkingBudget:0}}:{})});
+const body=th=>JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts:[{text:q}]}],generationConfig:Object.assign({maxOutputTokens:4096,temperature:1.0},th||{})});
 const go=th=>fetch(G+'models/'+model+(stream?':streamGenerateContent?alt=sse':':generateContent'),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:body(th)});
-// thinking off = much faster answers; if a model rejects that setting, retry normally
-const r=await go(true);
-return r.status===400?go(false):r;
+// thinking off = much faster answers. Older models use a budget, newer ones a level; if both are rejected, retry normally
+let r=await go({thinkingConfig:{thinkingBudget:0}});
+if(r.status===400)r=await go({thinkingConfig:{thinkingLevel:'minimal'}});
+if(r.status===400)r=await go();
+return r;
 }
 export default{
 async fetch(req,env){
@@ -55,7 +57,7 @@ for(const ln of lines){if(!ln.startsWith('data:'))continue;
 try{const d=JSON.parse(ln.slice(5));const p=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
 const t=p.filter(x=>!x.thought).map(x=>x.text||'').join('');if(t)ctl.enqueue(enc.encode(t))}catch(e){}}
 }});
-return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
+return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v3','X-OC-Mode':'stream','X-OC-Model':first}});
 }
 }catch(e){}
 }
@@ -79,6 +81,6 @@ st=r.status;
 if(i===0){const l=await list(env);names=names.concat(l.filter(n=>n!==first))}
 }
 if(!t)return j({error:(st===429?'The assistant is busy right now (free limit reached). ':'The assistant could not answer right now. ')+last.slice(0,260)},st===429?429:502);
-return j({text:t});
+return new Response(JSON.stringify({text:t}),{headers:{...cors,'Content-Type':'application/json','X-OC-Worker':'v3','X-OC-Mode':'fallback','X-OC-Model':names[Math.min(names.length-1,3)]||first}});
 }
 };
