@@ -147,24 +147,31 @@ window.askAI=async()=>{
   const qEl=document.getElementById('aq'),o=document.getElementById('ao'),q=qEl?qEl.value.trim():'';
   if(!q)return;
   if(!user){o.textContent='Please sign in with Google first (tap Sign in at the top), then ask again.';return}
+  const t0=Date.now();let first=0;
+  const tick=setInterval(()=>{if(!first)o.textContent='Thinking\u2026 \u2728 '+Math.round((Date.now()-t0)/1000)+'s'},1000);
   o.textContent='Thinking\u2026 \u2728';
+  const info=h=>{let n=document.getElementById('ao-info');if(!n){n=document.createElement('div');n.id='ao-info';n.style.cssText='font-size:.75rem;opacity:.6;margin-top:.5rem';o.insertAdjacentElement('afterend',n)}
+    const s=Math.round((Date.now()-t0)/100)/10,f=first?Math.round((first-t0)/100)/10:s;n.textContent='\u23f1 first words '+f+'s \u00b7 total '+s+'s \u00b7 '+(h?(h.get('X-OC-Mode')||'old worker')+' '+(h.get('X-OC-Model')||''):'')};
   try{
     const tok=await auth.currentUser.getIdToken();
     const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q,stream:true})});
     const clean=t=>t.replace(/\*\*/g,'').replace(/^#+\s*/gm,'');
     if((r.headers.get('content-type')||'').includes('text/plain')&&r.body){
       const rd=r.body.getReader(),dc=new TextDecoder();let raw='';
-      for(;;){const{done,value}=await rd.read();if(done)break;raw+=dc.decode(value,{stream:true});o.textContent=clean(raw)}
+      for(;;){const{done,value}=await rd.read();if(done)break;if(!first)first=Date.now();raw+=dc.decode(value,{stream:true});o.textContent=clean(raw)}
+      clearInterval(tick);
       raw=clean(raw).trim();
       if(!raw){o.textContent='Sorry, no answer came back. Please try again.';return}
-      const a=hGet();a.unshift({q,a:raw,t:new Date().toLocaleString()});hSet(a);histRender();
+      const a=hGet();a.unshift({q,a:raw,t:new Date().toLocaleString()});hSet(a);histRender();info(r.headers);
       return;
     }
     const d=await r.json();
+    clearInterval(tick);
     const ans=clean(d.text||d.error||'Sorry, no answer came back.');
     o.textContent=ans;
     if(d.text){const a=hGet();a.unshift({q,a:ans,t:new Date().toLocaleString()});hSet(a);histRender()}
-  }catch(e){o.textContent='Could not reach the assistant. Please check your internet and try again.'}
+    info(r.headers);
+  }catch(e){clearInterval(tick);o.textContent='Could not reach the assistant. Please check your internet and try again.'}
 };
 
 // ---------- Flyer designer: professional church flyers, saved at 2x resolution ----------
