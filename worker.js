@@ -13,7 +13,7 @@ return f.concat(l);
 }
 async function gen(env,model,q,stream){
 const body=th=>JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts:[{text:q}]}],generationConfig:Object.assign({maxOutputTokens:4096,temperature:1.0},th||{})});
-const go=th=>fetch(G+'models/'+model+(stream?':streamGenerateContent?alt=sse':':generateContent'),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:body(th)});
+const go=async th=>{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),stream?12000:25000);try{return await fetch(G+'models/'+model+(stream?':streamGenerateContent?alt=sse':':generateContent'),{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:body(th)})}catch(e){return new Response('{}',{status:504})}finally{clearTimeout(tm)}};
 // thinking off = much faster answers. Older models use a budget, newer ones a level; if both are rejected, retry normally
 let r=await go({thinkingConfig:{thinkingBudget:0}});
 if(r.status===400)r=await go({thinkingConfig:{thinkingLevel:'minimal'}});
@@ -44,10 +44,12 @@ return j({error:'The artwork maker returned nothing. Please try again.'},502);
 let q='',wantStream=false;
 try{const bj=await req.json();q=String(bj.q||'').trim().slice(0,1500);wantStream=!!bj.stream}catch(e){return j({error:'Bad request.'},400)}
 if(!q)return j({error:'Please type a question.'},400);
-const first=env.MODEL||'gemini-2.5-flash';
+const first=env.MODEL||'gemini-2.5-flash-lite';
 if(wantStream){
 try{
-const sr=await gen(env,first,q,true);
+let sr=await gen(env,first,q,true),used=first;
+if(!(sr.ok&&sr.body)){const l=(await list(env)).filter(n=>n!==first);const pick=l.filter(n=>/lite/.test(n)).concat(l.filter(n=>!/lite/.test(n))).slice(0,2);for(const n of pick){sr=await gen(env,n,q,true);used=n;if(sr.ok&&sr.body)break}}
+if(!(sr.ok&&sr.body))return j({error:sr.status===429?'The assistant is busy right now (free limit reached). Please wait a minute and tap Ask again.':'The assistant could not answer right now. Please tap Ask again.'},sr.status===429?429:502);
 if(sr.ok&&sr.body){
 const dec=new TextDecoder(),enc=new TextEncoder();let buf='';
 const ts=new TransformStream({transform(chunk,ctl){
@@ -57,7 +59,7 @@ for(const ln of lines){if(!ln.startsWith('data:'))continue;
 try{const d=JSON.parse(ln.slice(5));const p=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
 const t=p.filter(x=>!x.thought).map(x=>x.text||'').join('');if(t)ctl.enqueue(enc.encode(t))}catch(e){}}
 }});
-return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v3','X-OC-Mode':'stream','X-OC-Model':first}});
+return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v3','X-OC-Mode':'stream','X-OC-Model':used}});
 }
 }catch(e){}
 }
