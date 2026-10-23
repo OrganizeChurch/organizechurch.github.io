@@ -13,18 +13,34 @@ return f.concat(l);
 }
 async function gen(env,model,q,stream){
 const body=th=>JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts:[{text:q}]}],generationConfig:Object.assign({maxOutputTokens:4096,temperature:1.0},th||{})});
-const go=async th=>{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),stream?12000:25000);try{return await fetch(G+'models/'+model+(stream?':streamGenerateContent?alt=sse':':generateContent'),{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:body(th)})}catch(e){return new Response('{}',{status:504})}finally{clearTimeout(tm)}};
+const go=async th=>{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),stream?7000:20000);try{return await fetch(G+'models/'+model+(stream?':streamGenerateContent?alt=sse':':generateContent'),{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:body(th)})}catch(e){return new Response('{}',{status:504})}finally{clearTimeout(tm)}};
 // thinking off = much faster answers. Older models use a budget, newer ones a level; if both are rejected, retry normally
 let r=await go({thinkingConfig:{thinkingBudget:0}});
 if(r.status===400)r=await go({thinkingConfig:{thinkingLevel:'minimal'}});
 if(r.status===400)r=await go();
 return r;
 }
+// Backup: Cloudflare's own free AI (uses the same "AI" binding as the flyer artwork maker)
+async function cfAI(env,q){
+const msgs=[{role:'system',content:SYS},{role:'user',content:q}];
+for(const m of ['@cf/meta/llama-3.3-70b-instruct-fp8-fast','@cf/meta/llama-3.1-8b-instruct-fast']){
+try{
+const st=await env.AI.run(m,{messages:msgs,stream:true,max_tokens:1800});
+const dec=new TextDecoder(),enc=new TextEncoder();let buf='';
+const ts=new TransformStream({transform(chunk,ctl){
+buf+=dec.decode(chunk,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+for(const ln of lines){if(!ln.startsWith('data:'))continue;const v=ln.slice(5).trim();if(v==='[DONE]')continue;try{const t=JSON.parse(v).response;if(t)ctl.enqueue(enc.encode(t))}catch(e){}}
+}});
+return new Response(st.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v5','X-OC-Mode':'stream','X-OC-Model':m.split('/').pop()}});
+}catch(e){}
+}
+return null;
+}
 export default{
 async fetch(req,env){
 const j=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{...cors,'Content-Type':'application/json'}});
 if(req.method==='OPTIONS')return new Response(null,{headers:cors});
-if(req.method!=='POST')return j({ok:true,worker:'v4 fast'});
+if(req.method!=='POST')return j({ok:true,worker:'v5 fast',backup:!!env.AI});
 const tok=(req.headers.get('Authorization')||'').replace('Bearer ','');
 if(!tok)return j({error:'Please sign in to use the assistant.'},401);
 const v=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+env.FIREBASE_API_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:tok})});
@@ -48,7 +64,8 @@ const first='gemini-2.5-flash-lite'; // fast model first; busy or missing models
 if(wantStream){
 try{
 let sr=await gen(env,first,q,true),used=first;
-if(!(sr.ok&&sr.body)){const l=(await list(env)).filter(n=>n!==first);const pick=l.filter(n=>/lite/.test(n)).concat(l.filter(n=>!/lite/.test(n))).slice(0,2);for(const n of pick){sr=await gen(env,n,q,true);used=n;if(sr.ok&&sr.body)break}}
+if(!(sr.ok&&sr.body)){const l=(await list(env)).filter(n=>n!==first&&/lite/.test(n)).slice(0,1);for(const n of l){sr=await gen(env,n,q,true);used=n;if(sr.ok&&sr.body)break}}
+if(!(sr.ok&&sr.body)&&env.AI){const cf=await cfAI(env,q);if(cf)return cf}
 if(!(sr.ok&&sr.body))return j({error:sr.status===429?'The assistant is busy right now (free limit reached). Please wait a minute and tap Ask again.':'The assistant could not answer right now. Please tap Ask again.'},sr.status===429?429:502);
 if(sr.ok&&sr.body){
 const dec=new TextDecoder(),enc=new TextEncoder();let buf='';
@@ -59,7 +76,7 @@ for(const ln of lines){if(!ln.startsWith('data:'))continue;
 try{const d=JSON.parse(ln.slice(5));const p=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
 const t=p.filter(x=>!x.thought).map(x=>x.text||'').join('');if(t)ctl.enqueue(enc.encode(t))}catch(e){}}
 }});
-return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v4','X-OC-Mode':'stream','X-OC-Model':used}});
+return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v5','X-OC-Mode':'stream','X-OC-Model':used}});
 }
 }catch(e){}
 }
