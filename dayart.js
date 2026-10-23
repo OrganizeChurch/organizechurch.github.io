@@ -316,12 +316,11 @@ function dayArt(i){
   g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
   x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=24;rr(x,rx,ry,rw,60,30);x.fillStyle=g;x.fill();x.restore();
   x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+40);if('letterSpacing' in x)x.letterSpacing='0px';
-  // footer: site + network
+  // footer: site address
   const txt='organizechurch.github.io';x.font='800 31px Arial, Helvetica, sans-serif';x.fillStyle='#fff';
   const tw=x.measureText(txt).width,lx=(W-tw-(logoReady?66:0))/2;
-  if(logoReady)x.drawImage(logoImg,lx,W-104,54,54);
-  x.textAlign='left';x.fillText(txt,lx+(logoReady?68:0),W-62);x.textAlign='center';
-  x.font='700 19px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='4px';x.fillStyle='#ffd86b';x.fillText('ETERNITYPLUGGEDNETWORK',W/2+2,W-26);if('letterSpacing' in x)x.letterSpacing='0px';
+  if(logoReady)x.drawImage(logoImg,lx,W-88,54,54);
+  x.textAlign='left';x.fillText(txt,lx+(logoReady?68:0),W-49);x.textAlign='center';
   cache[key]=c;return c;
 }
 
