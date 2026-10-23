@@ -24,7 +24,7 @@ export default{
 async fetch(req,env){
 const j=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{...cors,'Content-Type':'application/json'}});
 if(req.method==='OPTIONS')return new Response(null,{headers:cors});
-if(req.method!=='POST')return j({error:'Not found'},404);
+if(req.method!=='POST')return j({ok:true,worker:'v4 fast'});
 const tok=(req.headers.get('Authorization')||'').replace('Bearer ','');
 if(!tok)return j({error:'Please sign in to use the assistant.'},401);
 const v=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+env.FIREBASE_API_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:tok})});
@@ -44,7 +44,7 @@ return j({error:'The artwork maker returned nothing. Please try again.'},502);
 let q='',wantStream=false;
 try{const bj=await req.json();q=String(bj.q||'').trim().slice(0,1500);wantStream=!!bj.stream}catch(e){return j({error:'Bad request.'},400)}
 if(!q)return j({error:'Please type a question.'},400);
-const first=env.MODEL||'gemini-2.5-flash-lite';
+const first='gemini-2.5-flash-lite'; // fast model first; busy or missing models are skipped automatically
 if(wantStream){
 try{
 let sr=await gen(env,first,q,true),used=first;
@@ -59,7 +59,7 @@ for(const ln of lines){if(!ln.startsWith('data:'))continue;
 try{const d=JSON.parse(ln.slice(5));const p=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
 const t=p.filter(x=>!x.thought).map(x=>x.text||'').join('');if(t)ctl.enqueue(enc.encode(t))}catch(e){}}
 }});
-return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v3','X-OC-Mode':'stream','X-OC-Model':used}});
+return new Response(sr.body.pipeThrough(ts),{headers:{...cors,'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-OC-Worker':'v4','X-OC-Mode':'stream','X-OC-Model':used}});
 }
 }catch(e){}
 }
