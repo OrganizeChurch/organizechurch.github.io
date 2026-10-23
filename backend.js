@@ -9,7 +9,8 @@ import{firebaseConfig,aiUrl}from'./firebase-config.js';
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let user=null,timer=null,msg='';
 const LOCAL=['photos','pics','welcome','uploads'];
-const CELSYNC={}; // church id -> {docId: json} last synced celebrants
+const CELSYNC={},WELSYNC={}; // welcome photos are stored online in the celebrants folder (marked kind:'wel')
+ // church id -> {docId: json} last synced celebrants
 const CELSEEN=new Set(); // media stays on this device until milestone 2 (Firebase Storage)
 const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[],cel:[]});
 
@@ -25,8 +26,14 @@ async function loadAll(){
 async function loadCel(id){
   const g=await getDocs(collection(db,'churches',id,'celebrants'));
   const c=ch(id);if(!c)return;
-  c.cel=g.docs.map(d=>({id:d.id,...d.data()}));
+  const all=g.docs.map(d=>({id:d.id,...d.data()}));
+  c.cel=all.filter(x=>x.kind!=='wel');
   CELSYNC[id]=Object.fromEntries(c.cel.map(x=>[x.id,JSON.stringify(x)]));
+  const wel=all.filter(x=>x.kind==='wel').sort((a,b)=>(a.o||0)-(b.o||0)).map(x=>({id:x.id.replace(/^w_/,''),type:'image',cap:x.cap||'',src:x.src}));
+  WELSYNC[id]=Object.fromEntries(wel.map(x=>[x.id,x.cap+'|'+x.src.length]));
+  const ids=new Set(wel.map(x=>x.id));
+  const keep=(c.welcome||[]).filter(x=>x.type==='embed'||(S.session===id&&!ids.has(x.id)));
+  c.welcome=[...keep.filter(x=>x.type==='embed'),...wel,...keep.filter(x=>x.type!=='embed')];
 }
 async function pushCel(c){
   const prev=CELSYNC[c.id]||{}; // if never loaded, only add/update (never delete blindly)
@@ -34,6 +41,14 @@ async function pushCel(c){
   for(const k in now)if(prev[k]!==now[k]){const{id,...rest}=JSON.parse(now[k]);await setDoc(doc(db,'churches',c.id,'celebrants',k),rest)}
   for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants',k));
   CELSYNC[c.id]=now;
+}
+async function pushWel(c){
+  const prev=WELSYNC[c.id]; // not loaded yet: only add, never delete
+  const list=(c.welcome||[]).filter(x=>x.type!=='embed'&&x.src);
+  const now={};list.forEach(x=>now[x.id]=(x.cap||'')+'|'+x.src.length);
+  for(let i=0;i<list.length;i++){const x=list[i];if(!prev||prev[x.id]!==now[x.id])await setDoc(doc(db,'churches',c.id,'celebrants','w_'+x.id),{kind:'wel',o:i,cap:x.cap||'',src:x.src})}
+  if(prev)for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants','w_'+k));
+  WELSYNC[c.id]=now;
 }
 async function loadMine(){
   S.session=null;if(!user)return;
@@ -44,7 +59,7 @@ async function loadMine(){
   if(p.exists())Object.assign(c,p.data());
   const ib=await getDocs(collection(db,'churches',id,'inbox'));
   c.inbox=ib.docs.map(d=>({id:d.id,...d.data()}));
-  try{await loadCel(id)}catch(e){console.error(e)}
+  try{await loadCel(id);CELSEEN.add(id);await pushWel(c)}catch(e){console.error(e)}
 }
 async function push(){
   const c=user&&me();if(!c)return;
@@ -52,6 +67,7 @@ async function push(){
     await setDoc(doc(db,'churches',c.id),pubOf(c));
     await setDoc(doc(db,'churches',c.id,'private','data'),privOf(c));
     await pushCel(c);
+    await pushWel(c);
   }catch(e){msg='Could not save: '+e.code;console.error(e)}
 }
 
