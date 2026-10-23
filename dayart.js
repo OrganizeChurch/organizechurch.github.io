@@ -221,7 +221,7 @@ function loadLogo(){
   logoImg.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(LOGO.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ').replace('width="34" height="34"','width="200" height="200"'));
 }
 let tplImg=null,tplReady=false,tplFail=false;
-function loadTpl(){if(tplImg)return;tplImg=new Image();tplImg.onload=()=>{tplReady=true;Object.keys(cache).forEach(k=>delete cache[k]);window.dispatchEvent(new Event('dayart-ready'))};tplImg.onerror=()=>{tplFail=true};tplImg.src='prophetic-template.jpg?v=1'}
+function loadTpl(){if(tplImg)return;tplImg=new Image();tplImg.onload=()=>{tplReady=true;Object.keys(cache).forEach(k=>delete cache[k]);window.dispatchEvent(new Event('dayart-ready'))};tplImg.onerror=()=>{tplFail=true;Object.keys(cache).forEach(k=>delete cache[k]);window.dispatchEvent(new Event('dayart-ready'))};tplImg.src='prophetic-template.jpg?v=2'}
 const cache={};
 // extra people drawn large in front of each scene: [pose, x, feetY, height, options]
 const N='#050a24',D='#12072a',G='160,190,255',Wm='255,226,170';
@@ -279,20 +279,20 @@ function finish(x,i){
 }
 function dayArt(i){
   const n=PIC.length;i=((i%n)+n)%n;loadLogo();loadTpl();
-  const useT=!tplFail,key=i+(logoReady?'L':'')+(tplReady?'T':'');if(cache[key])return cache[key];
+  const useT=!tplFail,key=i+(logoReady?'L':'')+(tplReady?'T':'')+(tplFail?'F':'');if(cache[key])return cache[key];
   const c=document.createElement('canvas');c.width=W;c.height=W;const x=c.getContext('2d');
-  if(useT){x.fillStyle=lg(x,[[0,'#7b45c4'],[.6,'#3a1c78'],[1,'#140a38']]);x.fillRect(0,0,W,W);if(tplReady){x.drawImage(tplImg,0,0,W,598);x.drawImage(tplImg,0,tplImg.height-2,tplImg.width,2,0,597,W,90)}}
+  if(useT){x.fillStyle=lg(x,[[0,'#7b45c4'],[.6,'#3a1c78'],[1,'#140a38']]);x.fillRect(0,0,W,W);if(tplReady){x.drawImage(tplImg,0,0,W,504);x.drawImage(tplImg,0,tplImg.height-2,tplImg.width,2,0,503,W,90)}}
   else{x.save();x.translate(0,SH[i]);try{SC[i](x)}catch(e){x.fillStyle='#1d3a8a';x.fillRect(0,0,W,W)}x.restore();if(SH[i]<0)x.drawImage(c,0,W+SH[i]-2,W,1,0,W+SH[i]-1,W,-SH[i]+2)}
   // layout first, so people can stand on top of the card
   const [line,ref]=PIC[i],cut=line.indexOf('. '),A=cut>0?line.slice(0,cut+1):line,B=cut>0?line.slice(cut+2):'';
-  let fs=74,la,lb,lh;const MW=W-210;
-  for(;fs>=40;fs-=2){x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';la=bwrap(x,A,MW);x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';lb=B?bwrap(x,B,MW):[];lh=fs*1.16;if(la.length+lb.length<=5&&(la.length+lb.length)*lh<=330)break}
-  const tot=(la.length+lb.length)*lh,cardH=Math.max(tot+104,useT?330:0),cardB=905,cardT=cardB-cardH,cx0=48,cw=W-96,padT=(cardH-tot-104)/2;
+  let fs=useT?100:74,la,lb,lh;const MW=W-190;
+  for(;fs>=40;fs-=2){x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';la=bwrap(x,A,MW);x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';lb=B?bwrap(x,B,MW):[];lh=fs*1.16;if(la.length+lb.length<=5&&(la.length+lb.length)*lh<=(useT?400:330))break}
+  const tot=(la.length+lb.length)*lh,cardH=Math.max(tot+104,useT?425:0),cardB=useT?915:905,cardT=cardB-cardH,cx0=48,cw=W-96,padT=(cardH-tot-104)/2;
   if(!useT)(FIG[i]||[]).forEach(f=>{const o=f[4],hh=Math.min(f[3]*(f[0]==='kneel'?1.15:1.12),cardT-150);person(x,f[1],cardT+10,hh,o.col||N,f[0],o)});
   if(!useT){finish(x,i);
   x.fillStyle=lg(x,[[0,'rgba(6,4,40,.55)'],[1,'rgba(6,4,40,0)']],0,210);x.fillRect(0,0,W,210);
   x.fillStyle=lg(x,[[0,'rgba(6,4,40,0)'],[1,'rgba(6,4,40,.85)']],560,W);x.fillRect(0,560,W,W-560)}
-  else{x.fillStyle=lg(x,[[0,'rgba(20,10,56,0)'],[.55,'rgba(20,10,56,.55)'],[1,'#140a38']],470,660);x.fillRect(0,470,W,190);x.fillStyle='#140a38';x.fillRect(0,660,W,W-660)}
+  else{x.fillStyle=lg(x,[[0,'rgba(20,10,56,0)'],[.55,'rgba(20,10,56,.55)'],[1,'#140a38']],380,560);x.fillRect(0,380,W,180);x.fillStyle='#140a38';x.fillRect(0,560,W,W-560)}
   x.textAlign='center';x.textBaseline='alphabetic';
   // top pill (already part of the template picture)
   if(!(useT&&tplReady)){const tl='PROPHETIC WORD OF THE DAY';x.font='800 25px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='5px';
@@ -369,7 +369,7 @@ function dayCardArt(kind,v){
 window.dayCardArt=dayCardArt;window.dayArtReadyLogo=()=>{loadLogo();return logoReady};
 window.dayArt=dayArt;window.dayArtCount=PIC.length;window.dayArtLine=i=>PIC[((i%PIC.length)+PIC.length)%PIC.length];
 // fill any <canvas data-dayart> that appears on the page
-function fill(){document.querySelectorAll('canvas[data-dayart]').forEach(cv=>{const i=+cv.dataset.dayart;const dk=String(i)+(logoReady?'L':'')+(tplReady?'T':'');if(cv.dataset.done===dk)return;cv.width=W;cv.height=W;cv.getContext('2d').drawImage(dayArt(i),0,0);cv.dataset.done=dk})}
+function fill(){document.querySelectorAll('canvas[data-dayart]').forEach(cv=>{const i=+cv.dataset.dayart;const dk=String(i)+(logoReady?'L':'')+(tplReady?'T':'')+(tplFail?'F':'');if(cv.dataset.done===dk)return;cv.width=W;cv.height=W;cv.getContext('2d').drawImage(dayArt(i),0,0);cv.dataset.done=dk})}
 window.dayArtFill=fill;
 window.addEventListener('dayart-ready',fill);
 new MutationObserver(fill).observe(document.documentElement,{childList:true,subtree:true});
