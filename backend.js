@@ -187,7 +187,7 @@ window.askAI=async()=>{
     o.textContent=ans;
     if(d.text){const a=hGet();a.unshift({q,a:ans,t:new Date().toLocaleString()});hSet(a);histRender()}
     info(r.headers);
-  }catch(e){clearInterval(tick);o.textContent=ac.signal.aborted&&!first?'The assistant is taking too long right now. Please tap Ask again.':(first?o.textContent+'\n\n(The answer was cut off. Please tap Ask again.)':'Could not reach the assistant. Please check your internet and try again.')}
+  }catch(e){clearInterval(tick);o.textContent=ac.signal.aborted&&!first?'The assistant is very busy right now because many people are using it. Please wait 2 minutes and tap Ask again. \ud83d\ude4f':(first?o.textContent+'\n\n(The answer was cut off. Please tap Ask again.)':'Could not reach the assistant. Please check your internet and try again.')}
 };
 
 // ---------- Flyer designer: professional church flyers, saved at 2x resolution ----------
