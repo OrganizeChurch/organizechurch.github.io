@@ -164,13 +164,13 @@ window.askAI=async()=>{
   if(!q)return;
   if(!user){o.textContent='Please sign in with Google first (tap Sign in at the top), then ask again.';return}
   const t0=Date.now();let first=0;
-  const tick=setInterval(()=>{if(!first)o.textContent='Thinking\u2026 \u2728 '+Math.round((Date.now()-t0)/1000)+'s'},1000);
+  const ac=new AbortController();const tick=setInterval(()=>{if(first)return;const sec=Math.round((Date.now()-t0)/1000);if(sec>=40){ac.abort();return}o.textContent='Thinking\u2026 \u2728 '+sec+'s'},1000);
   o.textContent='Thinking\u2026 \u2728';
   const info=h=>{let n=document.getElementById('ao-info');if(!n){n=document.createElement('div');n.id='ao-info';n.style.cssText='font-size:.75rem;opacity:.6;margin-top:.5rem';o.insertAdjacentElement('afterend',n)}
     const s=Math.round((Date.now()-t0)/100)/10,f=first?Math.round((first-t0)/100)/10:s;n.textContent='\u23f1 first words '+f+'s \u00b7 total '+s+'s \u00b7 '+(h?(h.get('X-OC-Mode')||'old worker')+' '+(h.get('X-OC-Model')||''):'')};
   try{
     const tok=await auth.currentUser.getIdToken();
-    const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q,stream:true})});
+    const r=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({q,stream:true}),signal:ac.signal});
     const clean=t=>t.replace(/\*\*/g,'').replace(/^#+\s*/gm,'');
     if((r.headers.get('content-type')||'').includes('text/plain')&&r.body){
       const rd=r.body.getReader(),dc=new TextDecoder();let raw='';
@@ -187,7 +187,7 @@ window.askAI=async()=>{
     o.textContent=ans;
     if(d.text){const a=hGet();a.unshift({q,a:ans,t:new Date().toLocaleString()});hSet(a);histRender()}
     info(r.headers);
-  }catch(e){clearInterval(tick);o.textContent='Could not reach the assistant. Please check your internet and try again.'}
+  }catch(e){clearInterval(tick);o.textContent=ac.signal.aborted&&!first?'The assistant is taking too long right now. Please tap Ask again.':(first?o.textContent+'\n\n(The answer was cut off. Please tap Ask again.)':'Could not reach the assistant. Please check your internet and try again.')}
 };
 
 // ---------- Flyer designer: professional church flyers, saved at 2x resolution ----------
