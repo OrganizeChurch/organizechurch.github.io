@@ -60,6 +60,21 @@ button{box-shadow:0 2px 0 rgba(0,0,0,.12)}button:active{transform:translateY(1px
 .celstrip{display:flex;gap:.6rem;overflow-x:auto;margin-top:.6rem;padding-bottom:.3rem}
 .celstrip figure{margin:0;flex:none;text-align:center}
 .celstrip img{height:150px;width:auto;max-width:220px;object-fit:cover;border-radius:12px;display:block;margin-bottom:.3rem}
+.celhero{border:2px solid var(--gold);background:linear-gradient(160deg,var(--lt),transparent 70%)}
+.frms{display:flex;gap:.9rem;overflow-x:auto;padding:.8rem .1rem .4rem;scroll-snap-type:x mandatory}
+.frm{flex:none;width:150px;margin:0;scroll-snap-align:start;text-align:center;text-decoration:none;color:inherit}
+.frm-pic{position:relative;width:150px;height:180px;border-radius:16px;padding:6px;background:linear-gradient(135deg,#fde68a,#f59e0b,#fbbf24);box-shadow:0 6px 16px rgba(0,0,0,.25);box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.frm-pic img{width:100%;height:100%;object-fit:cover;border-radius:11px;display:block}
+.frm-ic{font-size:3rem;background:var(--lt);width:100%;height:100%;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.frm.today .frm-pic{background:linear-gradient(135deg,#f9a8d4,#f43f5e,#fbbf24)}
+.frm-n{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;font-weight:800;font-size:.8rem;border-radius:999px;padding:.1rem .5rem}
+.frm figcaption{display:flex;flex-direction:column;align-items:center;gap:.2rem;margin-top:.45rem;font-size:.9rem;line-height:1.2}
+.frm-add .frm-pic{background:transparent;border:3px dashed var(--gold);box-shadow:none}
+.frm-add .frm-ic{background:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem;margin:.7rem 0}
+.chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .65rem;min-height:0;border-radius:999px;border:1.5px solid var(--pri);text-decoration:none;color:inherit;font-size:.82rem;line-height:1.3}
+.chip span{padding:0;margin:0}
+.chip b{font-size:.95rem}
 </style></head><body>
 <header id="hd"></header><main id="app"></main>
 <script>
@@ -112,7 +127,15 @@ function register(){return`<div class="card"><h1>Register your church</h1><form 
 const TABS=[['home','🏠 Dashboard'],['welcome','🎬 Welcome slide'],['members','👥 Members'],['att','✅ Attendance'],['ann','📣 Announcements'],['cel','🎂 Celebrants'],['lib','📖 Service Library'],['uploads','📤 New uploads'],['chat','💬 Chat'],['inbox','✉️ Messages'],['prayer','🙏 Prayer Request'],['pics','🖼️ Pic view'],['photos','📸 Photonemory'],['profile','⛪ Profile']];
 function admin(tab){const c=me();if(!c)return'<div class="card">Please <a href="#/login">sign in</a> first.</div>';
 const nav=`<h1>${esc(c.name)}</h1><nav class="tabs" aria-label="Church admin">${TABS.map(t=>`<a href="#/admin/${t[0]}" ${t[0]===tab?'aria-current="page"':''}>${t[1]}</a>`).join('')}</nav>`;
-const B={home:()=>{const ft=c.members.filter(m=>m.ft).length;return`<div class="grid"><div class="card stat"><h2>${c.members.length}</h2>👥 Members</div><div class="card stat g"><h2>${ft}</h2>👋 First-timers to follow up</div><div class="card stat m"><h2>${c.att.length}</h2>✅ Services recorded</div><div class="card stat r"><h2>${c.ann.length}</h2>📣 Announcements</div></div><div class="card"><h2>Today's Service</h2><p>${esc(c.times)}</p><a class="btn" href="#/c/${c.id}">👉 Swipe view</a></div>`},
+const B={home:()=>{const ft=c.members.filter(m=>m.ft).length,MN=['January','February','March','April','May','June','July','August','September','October','November','December'],now=new Date(),mo=now.getMonth()+1,dd=now.getDate();
+const ic=t=>/birth/i.test(t)?'🎂':/wedding/i.test(t)?'💍':/thanks/i.test(t)?'🙏':/ordin/i.test(t)?'✝️':'🎉';
+const L=(c.cel||[]).filter(x=>+String(x.dt).slice(5,7)===mo).sort((a,b)=>+String(a.dt).slice(8,10)-+String(b.dt).slice(8,10));
+const frame=x=>{const d=+String(x.dt).slice(8,10),ps=celPics(x),td=d===dd;return`<figure class='frm${td?' today':''}'><div class='frm-pic'>${ps.length?`<img src='${ps[0].src}' alt='${esc(x.n)}'>`:`<span class='frm-ic'>${ic(x.ty)}</span>`}${ps.length>1?`<span class='frm-n'>+${ps.length-1}</span>`:''}</div><figcaption><b>${esc(x.n)}</b>${td?' 🎉':''}<span class='mut'>${ic(x.ty)} ${d} ${MN[mo-1].slice(0,3)}</span>${ps.length?loveBtn(c.id,ps[0].id):''}</figcaption></figure>`};
+const add=`<a class='frm frm-add' href='#/admin/cel'><div class='frm-pic'><span class='frm-ic'>🎉</span></div><figcaption><b>Celebrate someone</b><span class='mut'>Add a birthday, anniversary or thanksgiving</span></figcaption></a>`;
+const chip=(h,ico,lab,n)=>`<a class='chip' href='${h}'><span>${ico}</span><b>${n}</b> ${lab}</a>`;
+return`<div class='card celhero'><div class='row' style='justify-content:space-between;align-items:center'><h2 style='margin:0'>🎉 Celebrants of ${MN[mo-1]}</h2><a class='btn sm' href='#/admin/cel'>➕ Add</a></div>${L.length?`<p class='mut' style='margin:.3rem 0 0'>${L.length} celebrant${L.length>1?'s':''} this month. Swipe to see them all 👉</p>`:`<p class='mut' style='margin:.3rem 0 0'>No one listed yet this month. Add a birthday, wedding anniversary or thanksgiving and it shows on your church page too.</p>`}<div class='frms'>${L.map(frame).join('')}${add}</div></div>
+<div class='chips'>${chip('#/admin/members','👥','Members',c.members.length)}${chip('#/admin/members','👋','First-timers',ft)}${chip('#/admin/att','✅','Services',c.att.length)}${chip('#/admin/ann','📣','Announcements',c.ann.length)}${chip('#/admin/inbox','✉️','Messages',(c.inbox||[]).length)}${chip('#/admin/prayer','🙏','Prayer requests',(c.prayer||[]).length)}</div>
+<div class='card'><h2 style='margin-top:0'>📅 Today's Service</h2><p>${esc(c.times)}</p><a class='btn sm' href='#/c/${c.id}'>👉 Open church page</a></div>`},
 members:()=>`<div class="card"><h2>Add member</h2><form data-f="mem"><label for="mn">Full name</label><input id="mn" name="n" required><label for="mp">Phone</label><input id="mp" name="ph"><label><input type="checkbox" name="ft" style="width:auto;min-height:0"> First-timer</label><label for="mf">Follow-up note</label><input id="mf" name="fu"><p><button>Save member</button></p></form></div>
 <div class="card scroll"><table><tr><th>Name</th><th>Phone</th><th>Status</th><th></th></tr>${c.members.map(m=>`<tr><td>${esc(m.n)}</td><td>${esc(m.ph)}</td><td>${m.ft?'<span class="tag">First-timer</span> ':''}${esc(m.fu)}</td><td><button class="sec sm" data-a="delm" data-id="${m.id}" aria-label="Remove ${esc(m.n)}">Remove</button></td></tr>`).join('')}</table></div>`,
 att:()=>`<div class="card"><h2>Record attendance</h2><form data-f="att"><label for="ad">Date</label><input id="ad" type="date" name="d" value="${today()}" required><label for="an">Service name</label><input id="an" name="s" value="Sunday Service" required>
