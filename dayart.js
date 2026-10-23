@@ -220,6 +220,8 @@ function loadLogo(){
   logoImg.onload=()=>{logoReady=true;Object.keys(cache).forEach(k=>delete cache[k]);window.dispatchEvent(new Event('dayart-ready'))};
   logoImg.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(LOGO.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ').replace('width="34" height="34"','width="200" height="200"'));
 }
+let tplImg=null,tplReady=false,tplFail=false;
+function loadTpl(){if(tplImg)return;tplImg=new Image();tplImg.onload=()=>{tplReady=true;Object.keys(cache).forEach(k=>delete cache[k]);window.dispatchEvent(new Event('dayart-ready'))};tplImg.onerror=()=>{tplFail=true};tplImg.src='prophetic-template.jpg?v=1'}
 const cache={};
 // extra people drawn large in front of each scene: [pose, x, feetY, height, options]
 const N='#050a24',D='#12072a',G='160,190,255',Wm='255,226,170';
@@ -276,32 +278,33 @@ function finish(x,i){
   x.restore();
 }
 function dayArt(i){
-  const n=PIC.length;i=((i%n)+n)%n;loadLogo();
-  const key=i+(logoReady?'L':'');if(cache[key])return cache[key];
+  const n=PIC.length;i=((i%n)+n)%n;loadLogo();loadTpl();
+  const useT=!tplFail,key=i+(logoReady?'L':'')+(tplReady?'T':'');if(cache[key])return cache[key];
   const c=document.createElement('canvas');c.width=W;c.height=W;const x=c.getContext('2d');
-  x.save();x.translate(0,SH[i]);try{SC[i](x)}catch(e){x.fillStyle='#1d3a8a';x.fillRect(0,0,W,W)}x.restore();if(SH[i]<0)x.drawImage(c,0,W+SH[i]-2,W,1,0,W+SH[i]-1,W,-SH[i]+2);
+  if(useT){x.fillStyle=lg(x,[[0,'#7b45c4'],[.6,'#3a1c78'],[1,'#140a38']]);x.fillRect(0,0,W,W);if(tplReady){x.drawImage(tplImg,0,0,W,598);x.drawImage(tplImg,0,tplImg.height-2,tplImg.width,2,0,597,W,90)}}
+  else{x.save();x.translate(0,SH[i]);try{SC[i](x)}catch(e){x.fillStyle='#1d3a8a';x.fillRect(0,0,W,W)}x.restore();if(SH[i]<0)x.drawImage(c,0,W+SH[i]-2,W,1,0,W+SH[i]-1,W,-SH[i]+2)}
   // layout first, so people can stand on top of the card
   const [line,ref]=PIC[i],cut=line.indexOf('. '),A=cut>0?line.slice(0,cut+1):line,B=cut>0?line.slice(cut+2):'';
   let fs=74,la,lb,lh;const MW=W-210;
   for(;fs>=40;fs-=2){x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';la=bwrap(x,A,MW);x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';lb=B?bwrap(x,B,MW):[];lh=fs*1.16;if(la.length+lb.length<=5&&(la.length+lb.length)*lh<=330)break}
-  const tot=(la.length+lb.length)*lh,cardH=tot+104,cardB=905,cardT=cardB-cardH,cx0=48,cw=W-96;
-  (FIG[i]||[]).forEach(f=>{const o=f[4],hh=Math.min(f[3]*(f[0]==='kneel'?1.15:1.12),cardT-150);person(x,f[1],cardT+10,hh,o.col||N,f[0],o)});
-  finish(x,i);
-  // soft top + bottom shading
+  const tot=(la.length+lb.length)*lh,cardH=Math.max(tot+104,useT?330:0),cardB=905,cardT=cardB-cardH,cx0=48,cw=W-96,padT=(cardH-tot-104)/2;
+  if(!useT)(FIG[i]||[]).forEach(f=>{const o=f[4],hh=Math.min(f[3]*(f[0]==='kneel'?1.15:1.12),cardT-150);person(x,f[1],cardT+10,hh,o.col||N,f[0],o)});
+  if(!useT){finish(x,i);
   x.fillStyle=lg(x,[[0,'rgba(6,4,40,.55)'],[1,'rgba(6,4,40,0)']],0,210);x.fillRect(0,0,W,210);
-  x.fillStyle=lg(x,[[0,'rgba(6,4,40,0)'],[1,'rgba(6,4,40,.85)']],560,W);x.fillRect(0,560,W,W-560);
+  x.fillStyle=lg(x,[[0,'rgba(6,4,40,0)'],[1,'rgba(6,4,40,.85)']],560,W);x.fillRect(0,560,W,W-560)}
+  else{x.fillStyle=lg(x,[[0,'rgba(20,10,56,0)'],[.55,'rgba(20,10,56,.55)'],[1,'#140a38']],470,660);x.fillRect(0,470,W,190);x.fillStyle='#140a38';x.fillRect(0,660,W,W-660)}
   x.textAlign='center';x.textBaseline='alphabetic';
-  // top pill
-  const tl='PROPHETIC WORD OF THE DAY';x.font='800 25px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='5px';
+  // top pill (already part of the template picture)
+  if(!(useT&&tplReady)){const tl='PROPHETIC WORD OF THE DAY';x.font='800 25px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='5px';
   const tw0=x.measureText(tl).width,pw=tw0+130,px=(W-pw)/2;
   rr(x,px,40,pw,60,30);x.fillStyle='rgba(255,255,255,.16)';x.fill();x.lineWidth=2.5;x.strokeStyle='rgba(255,255,255,.6)';x.stroke();
   x.fillStyle='#fff';x.fillText(tl,W/2+2,78);if('letterSpacing' in x)x.letterSpacing='0px';
-  spark(x,px+34,70,11,1);spark(x,px+pw-34,70,11,1);
+  spark(x,px+34,70,11,1);spark(x,px+pw-34,70,11,1)}
   // glass card
-  x.save();x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=40;x.shadowOffsetY=14;rr(x,cx0,cardT,cw,cardH,44);x.fillStyle='rgba(14,8,52,.52)';x.fill();x.restore();
+  x.save();x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=40;x.shadowOffsetY=14;rr(x,cx0,cardT,cw,cardH,44);x.fillStyle=useT?'rgba(14,8,52,.66)':'rgba(14,8,52,.52)';x.fill();x.restore();
   let g=x.createLinearGradient(cx0,cardT,cx0+cw,cardT+cardH);g.addColorStop(0,'rgba(255,255,255,.2)');g.addColorStop(.5,'rgba(255,255,255,.04)');g.addColorStop(1,'rgba(255,255,255,.14)');rr(x,cx0,cardT,cw,cardH,44);x.fillStyle=g;x.fill();
   g=x.createLinearGradient(cx0,cardT,cx0+cw,cardT+cardH);g.addColorStop(0,'#5ef0ff');g.addColorStop(.5,'#c07bff');g.addColorStop(1,'#ff7ac8');rr(x,cx0,cardT,cw,cardH,44);x.lineWidth=3.5;x.strokeStyle=g;x.stroke();
-  let y=cardT+52+fs*.8;
+  let y=cardT+52+padT+fs*.8;
   x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=12;x.shadowOffsetY=3;
   x.font='900 '+fs+'px Arial Black, Arial, Helvetica, sans-serif';x.fillStyle='#fff';la.forEach(t=>{x.fillText(t,W/2,y);y+=lh});
   x.font='italic 700 '+Math.round(fs*1.02)+'px Georgia, "Times New Roman", serif';
@@ -313,11 +316,12 @@ function dayArt(i){
   g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
   x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=24;rr(x,rx,ry,rw,60,30);x.fillStyle=g;x.fill();x.restore();
   x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+40);if('letterSpacing' in x)x.letterSpacing='0px';
-  // footer
-  const txt='OrganizeChurch  ·  organizechurch.github.io';x.font='700 27px Arial, Helvetica, sans-serif';x.fillStyle='rgba(255,255,255,.95)';
-  const tw=x.measureText(txt).width,lx=(W-tw-(logoReady?58:0))/2;
-  if(logoReady)x.drawImage(logoImg,lx,W-80,52,52);
-  x.textAlign='left';x.fillText(txt,lx+(logoReady?66:0),W-44);x.textAlign='center';
+  // footer: site + network
+  const txt='organizechurch.github.io';x.font='800 31px Arial, Helvetica, sans-serif';x.fillStyle='#fff';
+  const tw=x.measureText(txt).width,lx=(W-tw-(logoReady?66:0))/2;
+  if(logoReady)x.drawImage(logoImg,lx,W-104,54,54);
+  x.textAlign='left';x.fillText(txt,lx+(logoReady?68:0),W-62);x.textAlign='center';
+  x.font='700 19px Arial, Helvetica, sans-serif';if('letterSpacing' in x)x.letterSpacing='4px';x.fillStyle='#ffd86b';x.fillText('ETERNITYPLUGGEDNETWORK',W/2+2,W-26);if('letterSpacing' in x)x.letterSpacing='0px';
   cache[key]=c;return c;
 }
 
@@ -357,15 +361,15 @@ function dayCardArt(kind,v){
   g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
   x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=26;rr(x,rx,ry,rw,68,34);x.fillStyle=g;x.fill();x.restore();x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+46);if('letterSpacing' in x)x.letterSpacing='0px';
   // footer
-  x.fillStyle='#fff';x.font='800 36px Arial, Helvetica, sans-serif';x.fillText('Get the OrganizeChurch app',W/2+(logoReady?0:0),H-130);
-  const txt='organizechurch.github.io';x.font='700 34px Arial, Helvetica, sans-serif';x.fillStyle='#ffe9a8';x.fillText(txt,W/2,H-80);
+  x.fillStyle='#fff';x.font='800 31px Arial, Helvetica, sans-serif';x.fillText('Church management + creative inspiration',W/2,H-132);
+  const txt='Get the free app  ·  organizechurch.github.io';x.font='700 30px Arial, Helvetica, sans-serif';x.fillStyle='#ffe9a8';x.fillText(txt,W/2,H-80);
   if(logoReady){x.drawImage(logoImg,70,H-200,92,92);x.drawImage(logoImg,W-162,H-200,92,92)}
   return c;
 }
 window.dayCardArt=dayCardArt;window.dayArtReadyLogo=()=>{loadLogo();return logoReady};
 window.dayArt=dayArt;window.dayArtCount=PIC.length;window.dayArtLine=i=>PIC[((i%PIC.length)+PIC.length)%PIC.length];
 // fill any <canvas data-dayart> that appears on the page
-function fill(){document.querySelectorAll('canvas[data-dayart]').forEach(cv=>{const i=+cv.dataset.dayart;if(cv.dataset.done===String(i)+(logoReady?'L':''))return;cv.width=W;cv.height=W;cv.getContext('2d').drawImage(dayArt(i),0,0);cv.dataset.done=String(i)+(logoReady?'L':'')})}
+function fill(){document.querySelectorAll('canvas[data-dayart]').forEach(cv=>{const i=+cv.dataset.dayart;const dk=String(i)+(logoReady?'L':'')+(tplReady?'T':'');if(cv.dataset.done===dk)return;cv.width=W;cv.height=W;cv.getContext('2d').drawImage(dayArt(i),0,0);cv.dataset.done=dk})}
 window.dayArtFill=fill;
 window.addEventListener('dayart-ready',fill);
 new MutationObserver(fill).observe(document.documentElement,{childList:true,subtree:true});
