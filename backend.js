@@ -3,7 +3,7 @@ import{renderFlyer,SIZES as FLSIZES,THEMES as FLTHEMES,DEFAULTS as FLDEF}from'./
 // OrganizeChurch backend layer, milestone 1: Google/Facebook sign-in, shared churches, private church data.
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import{getAuth,GoogleAuthProvider,FacebookAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import{getFirestore,collection,doc,getDocs,getDoc,setDoc,addDoc,deleteDoc,query,where}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import{getFirestore,collection,doc,getDocs,getDoc,setDoc,addDoc,deleteDoc,query,where,increment}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import{firebaseConfig,aiUrl}from'./firebase-config.js';
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -50,6 +50,28 @@ async function pushWel(c){
   if(prev)for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants','w_'+k));
   WELSYNC[c.id]=now;
 }
+// ---------- Love counts for welcome and celebrant photos (shared by everyone) ----------
+const LOVESEEN=new Set();
+async function loadLoves(id){
+  const g=await getDocs(collection(db,'churches',id,'loves'));
+  window.LOVES[id]=Object.fromEntries(g.docs.map(d=>[d.id,d.data().n||0]));
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest&&e.target.closest('[data-love]');if(!b)return;
+  e.preventDefault();e.stopPropagation();
+  const cid=b.dataset.cid,pid=b.dataset.love,key=cid+'/'+pid;
+  let set;try{set=new Set(JSON.parse(localStorage.getItem('oc_loved')||'[]'))}catch(x){set=new Set()}
+  const on=!set.has(key),L=(window.LOVES[cid]=window.LOVES[cid]||{});
+  const show=()=>document.querySelectorAll(`[data-love="${pid}"][data-cid="${cid}"]`).forEach(x=>{x.classList.toggle('on',set.has(key));x.setAttribute('aria-pressed',set.has(key));x.innerHTML=(set.has(key)?'\u2764\ufe0f':'\ud83e\udd0d')+' <span>'+(L[pid]||0)+'</span>'});
+  if(on)set.add(key);else set.delete(key);
+  L[pid]=Math.max(0,(L[pid]||0)+(on?1:-1));show();
+  try{localStorage.setItem('oc_loved',JSON.stringify([...set].slice(-3000)))}catch(x){}
+  try{await setDoc(doc(db,'churches',cid,'loves',pid),{n:increment(on?1:-1)},{merge:true})}
+  catch(x){ // undo if the server refused
+    if(on)set.delete(key);else set.add(key);L[pid]=Math.max(0,(L[pid]||0)+(on?-1:1));show();
+    try{localStorage.setItem('oc_loved',JSON.stringify([...set]))}catch(y){}
+    console.error(x)}
+},true);
 async function loadMine(){
   S.session=null;if(!user)return;
   const q=await getDocs(query(collection(db,'churches'),where('ownerUid','==',user.uid)));
@@ -60,6 +82,7 @@ async function loadMine(){
   const ib=await getDocs(collection(db,'churches',id,'inbox'));
   c.inbox=ib.docs.map(d=>({id:d.id,...d.data()}));
   try{await loadCel(id);CELSEEN.add(id);await pushWel(c)}catch(e){console.error(e)}
+  try{await loadLoves(id);LOVESEEN.add(id)}catch(e){console.error(e)}
 }
 async function push(){
   const c=user&&me();if(!c)return;
@@ -288,7 +311,7 @@ document.addEventListener('click',async e=>{
 const _hdr=window.header;
 window.header=function(){_hdr();const h=document.getElementById('hd');if(h&&!h.querySelector('[data-fl]'))h.insertAdjacentHTML('beforeend','<a class="btn sec sm" data-fl href="#/flyer">\ud83c\udfa8 Flyer</a>')};
 const _rt=window.route;
-const after=()=>{const m=location.hash.match(/^#\/c\/([^/]+)/);if(m&&!CELSEEN.has(m[1])&&S.churches.length){CELSEEN.add(m[1]);loadCel(m[1]).then(()=>{if(location.hash.startsWith('#/c/'+m[1]))_rt()}).catch(e=>console.error(e))}if(location.hash.startsWith('#/flyer'))flyerPage();else if(location.hash.startsWith('#/ai'))aiExtras()};
+const after=()=>{const m=location.hash.match(/^#\/c\/([^/]+)/);if(m&&!CELSEEN.has(m[1])&&S.churches.length){CELSEEN.add(m[1]);LOVESEEN.add(m[1]);Promise.all([loadCel(m[1]),loadLoves(m[1]).catch(e=>console.error(e))]).then(()=>{if(location.hash.startsWith('#/c/'+m[1]))_rt()}).catch(e=>console.error(e))}if(location.hash.startsWith('#/flyer'))flyerPage();else if(location.hash.startsWith('#/ai'))aiExtras()};
 window.route=function(){_rt();after()};
 addEventListener('hashchange',()=>setTimeout(after,0));
 
