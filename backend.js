@@ -206,10 +206,10 @@ document.addEventListener('submit',async e=>{
   if(t==='reg'&&!user){e.preventDefault();e.stopImmediatePropagation();msg='Please sign in first, then register your church.';location.hash='#/login';route();return}
   if(t!=='msg'&&t!=='sup')return;
   e.preventDefault();e.stopImmediatePropagation();
-  const d=new FormData(f),body={n:String(d.get('n')||'').slice(0,190),m:String(d.get('m')||'').slice(0,1900),d:today()};
+  const d=new FormData(f),pr=t==='msg'&&d.get('k')==='prayer',body={n:(String(d.get('n')||'').trim()||(pr?'Anonymous':'A visitor')).slice(0,190),m:((pr?'\ud83d\ude4f Prayer request\n':'')+String(d.get('m')||'')).slice(0,1900),d:today()};
   try{
     await addDoc(t==='msg'?collection(db,'churches',d.get('cid'),'inbox'):collection(db,'support'),body);
-    f.outerHTML='<p class="note">Thank you! Your message was sent.</p>';
+    f.outerHTML=pr?'<p class="note">\ud83d\ude4f Thank you. Your prayer request was sent to your pastors. We are standing with you in prayer.</p>':'<p class="note">Thank you! Your message was sent to the church.</p>';
   }catch(x){f.insertAdjacentHTML('beforeend','<p class="note">Sorry, it could not be sent. Please try again.</p>')}
 },true);
 
