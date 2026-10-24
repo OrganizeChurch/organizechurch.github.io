@@ -14,7 +14,7 @@ const CELSYNC={};
 const CELSEEN=new Set();
 const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[],cel:[]});
 
-const pubOf=c=>({id:c.id,name:c.name||'',city:c.city||'',about:c.about||'',mission:c.mission||'',times:c.times||'',contact:c.contact||'',give:c.give||'',listed:!!c.listed,ownerUid:user.uid,wa:String(c.wa||'').slice(0,40),waShow:!!c.waShow,
+const pubOf=c=>({id:c.id,name:c.name||'',city:c.city||'',about:c.about||'',mission:c.mission||'',times:c.times||'',contact:c.contact||'',give:c.give||'',listed:!!c.listed,ownerUid:user.uid,wa:String(c.wa||'').slice(0,40),waShow:!!c.waShow,timesSet:!!c.timesSet,
   welcome:(c.welcome||[]).filter(x=>x.type==='embed'),ann:(c.ann||[]).filter(x=>x.pub),lib:(c.lib||[]).filter(x=>x.vis==='public')});
 const privOf=c=>({ownerUid:user.uid,members:c.members||[],att:c.att||[],ann:c.ann||[],lib:c.lib||[],prayer:c.prayer||[],chat:c.chat||[],
   uploads:(c.uploads||[]).filter(x=>x.vis!=='public'&&isOurs(x.data))}); // members-only files: link kept private
