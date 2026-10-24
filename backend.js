@@ -217,7 +217,9 @@ onAuthStateChanged(auth,async u=>{
   user=u;window.OC_ADMIN=false;window.OC_EMAIL=u&&u.email||'';
   // app-owner tools: only for the OrganizeChurch owner account (email compared by fingerprint, not stored here)
   try{if(u&&u.email){const h=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u.email.toLowerCase())))].map(b=>b.toString(16).padStart(2,'0')).join('');window.OC_ADMIN=h==='1ce112a3c11164d1b4e878623e5050382f964817f6d92b51afccd44168fbfc70'}}catch(e){}
-  try{await loadAll();await loadMine()}catch(e){msg=(nice(e.code)||'Could not load data')+' ['+(e.code||e.message)+']';console.error(e)}
+  window.OC_LOADING=true;window.OC_LOADERR='';
+  try{await loadAll();await loadMine()}catch(e){msg=(nice(e.code)||'Could not load data')+' ['+(e.code||e.message)+']';window.OC_LOADERR=msg;console.error(e)}
+  window.OC_LOADING=false;
   route();
 });
 
