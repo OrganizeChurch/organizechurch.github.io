@@ -222,12 +222,18 @@ return`<div class='item' style='display:flex;gap:.8rem;align-items:center;${td?'
 const sorted=a=>a.slice().sort((p,q)=>dy(p)-dy(q)),cur=sorted(L.filter(x=>mo(x)===m)),nx=sorted(L.filter(x=>mo(x)===m%12+1));
 return`<h2>🎂 Celebrants of ${MN[m-1]}</h2>${cur.map(card).join('')||'<p class="mut">No celebrants listed for this month yet.</p>'}${nx.length?`<h3 style='margin-top:1rem'>Coming up in ${MN[m%12]}</h3>${nx.map(card).join('')}`:''}${adm?'<p><a class="btn sm" href="#/admin/cel">Add or remove celebrants</a></p>':''}`}
 let CV=0,CT=null;
-function svcInfo(times){const D=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'],t=String(times||'').toLowerCase(),now=new Date(),td=now.getDay();
-const days=D.map((d,i)=>t.includes(d)||t.includes(d.slice(0,3)+' ')||t.includes(d.slice(0,3)+'.')?i:-1).filter(i=>i>=0);
-if(!days.length)return{title:'Service times',sub:''};
-if(days.includes(td))return{title:"Today's service",sub:now.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})};
-const gap=Math.min(...days.map(i=>(i-td+7)%7||7)),nx=new Date(now.getTime()+gap*864e5);
-return{title:gap===1?"Tomorrow's service":'Next service',sub:nx.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}}
+function svcInfo(times,at){const D=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'],t=String(times||'').toLowerCase(),now=at||new Date();
+// find each day name and the times written after it (up to the next day name)
+const hits=[];D.forEach((d,i)=>{const re=new RegExp('\\b('+d+'s?|'+d.slice(0,3)+')\\b','g');let m;while((m=re.exec(t)))hits.push({i,pos:m.index})});hits.sort((a,b)=>a.pos-b.pos);
+if(!hits.length)return{title:'Service times',sub:''};
+const tre=/(\d{1,2})(?::|\.)?(\d{2})?\s*(am|pm)/g,plan={};
+hits.forEach((h,k)=>{const seg=t.slice(h.pos,k+1<hits.length?hits[k+1].pos:t.length);const ts=[];let m;tre.lastIndex=0;while((m=tre.exec(seg))){let hr=+m[1]%12;if(m[3]==='pm')hr+=12;ts.push({h:hr,mi:+(m[2]||0),txt:m[0].replace(/\s+/g,'')})}(plan[h.i]=plan[h.i]||[]).push(...ts)});
+const fmt=d=>d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+for(let gap=0;gap<=7;gap++){const day=new Date(now.getFullYear(),now.getMonth(),now.getDate()+gap),w=day.getDay();if(!(w in plan))continue;const ts=plan[w];
+ if(gap===0&&ts.length){const last=Math.max(...ts.map(x=>x.h*60+x.mi));if(now.getHours()*60+now.getMinutes()>last+120)continue}
+ const tt=ts.length?' · '+ts.map(x=>x.txt).join(', '):'';
+ return{title:gap===0?"Today's service":gap===1?"Tomorrow's service":'Next service',sub:fmt(day)+tt}}
+return{title:'Service times',sub:''}}
 function celSlides(c){const now=new Date(),m=now.getMonth()+1;const L=(c.cel||[]).filter(x=>+String(x.dt).slice(5,7)===m).sort((a,b)=>+String(a.dt).slice(8,10)-+String(b.dt).slice(8,10));const out=[];L.forEach(x=>{const ps=celPics(x);if(ps.length)ps.forEach(p=>out.push({x,p}));else out.push({x,p:null})});return out}
 function celSlide(c,adm,idx){
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],MF=['January','February','March','April','May','June','July','August','September','October','November','December'],now=new Date(),m=now.getMonth()+1,dd=now.getDate();
