@@ -9,46 +9,103 @@ import{firebaseConfig,aiUrl}from'./firebase-config.js';
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let user=null,timer=null,msg='';
 const LOCAL=['photos','pics','welcome','uploads'];
-const CELSYNC={},WELSYNC={}; // welcome photos are stored online in the celebrants folder (marked kind:'wel')
+const CELSYNC={};
  // church id -> {docId: json} last synced celebrants
-const CELSEEN=new Set(); // media stays on this device until milestone 2 (Firebase Storage)
+const CELSEEN=new Set();
 const blank=()=>({members:[],att:[],ann:[],lib:[],photos:[],pics:[],welcome:[],uploads:[],prayer:[],chat:[],inbox:[],cel:[]});
 
 const pubOf=c=>({id:c.id,name:c.name||'',city:c.city||'',about:c.about||'',mission:c.mission||'',times:c.times||'',contact:c.contact||'',give:c.give||'',listed:!!c.listed,ownerUid:user.uid,
   welcome:(c.welcome||[]).filter(x=>x.type==='embed'),ann:(c.ann||[]).filter(x=>x.pub),lib:(c.lib||[]).filter(x=>x.vis==='public')});
-const privOf=c=>({ownerUid:user.uid,members:c.members||[],att:c.att||[],ann:c.ann||[],lib:c.lib||[],prayer:c.prayer||[],chat:c.chat||[]});
+const privOf=c=>({ownerUid:user.uid,members:c.members||[],att:c.att||[],ann:c.ann||[],lib:c.lib||[],prayer:c.prayer||[],chat:c.chat||[],
+  uploads:(c.uploads||[]).filter(x=>x.vis!=='public'&&isOurs(x.data))}); // members-only files: link kept private
 
 async function loadAll(){
   const old=Object.fromEntries(S.churches.map(c=>[c.id,c]));
   const s=await getDocs(collection(db,'churches'));
   S.churches=s.docs.map(d=>{const o={...blank(),...d.data()};LOCAL.forEach(k=>{o[k]=(old[d.id]&&old[d.id][k])||[]});o.cel=(old[d.id]&&old[d.id].cel)||[];o.welcome=[...(d.data().welcome||[]),...(((old[d.id]&&old[d.id].welcome)||[]).filter(x=>x.type!=='embed'))];return o});
 }
+// ---------- Photos and files: stored on Cloudflare (MEDIA), listed in the church's "celebrants" folder ----------
+// Each kind of list gets its own label, so one Firebase rule covers them all.
+const MK={welcome:['wel','w_'],photos:['photo','ph_'],pics:['pic','pi_'],uploads:['up','up_']};
+const MSYNC={}; // church id -> {field: {docId: signature}}
+const URLSEEN={}; // church id -> Set of stored file links (to clean up removed files)
+const bodyOf=x=>x.src||x.data||'';
+const sig=x=>{const{src,data,_s,...r}=x;const b=bodyOf(x);return JSON.stringify(r)+'|'+b.length+'|'+b.slice(-40)};
+const isPublicItem=(f,x)=>f!=='uploads'||x.vis==='public';
+const celJson=x=>{const{_s,...r}=x;return JSON.stringify(r)};
 async function loadCel(id){
   const g=await getDocs(collection(db,'churches',id,'celebrants'));
   const c=ch(id);if(!c)return;
   const all=g.docs.map(d=>({id:d.id,...d.data()}));
-  c.cel=all.filter(x=>x.kind!=='wel');
-  CELSYNC[id]=Object.fromEntries(c.cel.map(x=>[x.id,JSON.stringify(x)]));
-  const wel=all.filter(x=>x.kind==='wel').sort((a,b)=>(a.o||0)-(b.o||0)).map(x=>({id:x.id.replace(/^w_/,''),type:'image',cap:x.cap||'',src:x.src}));
-  WELSYNC[id]=Object.fromEntries(wel.map(x=>[x.id,x.cap+'|'+x.src.length]));
-  const ids=new Set(wel.map(x=>x.id));
-  const keep=(c.welcome||[]).filter(x=>x.type==='embed'||(S.session===id&&!ids.has(x.id)));
-  c.welcome=[...keep.filter(x=>x.type==='embed'),...wel,...keep.filter(x=>x.type!=='embed')];
+  // _s marks an item that has been saved online before; a saved item missing online was deleted on another phone
+  const srvCel=all.filter(x=>!x.kind).map(x=>({...x,_s:1})),cids=new Set(srvCel.map(x=>x.id));
+  c.cel=[...srvCel,...(S.session===id?(c.cel||[]).filter(x=>!cids.has(x.id)&&!x._s):[])];
+  CELSYNC[id]=Object.fromEntries(srvCel.map(x=>[x.id,celJson(x)]));
+  const M=MSYNC[id]={};
+  for(const f in MK){const[k,pre]=MK[f];
+    const got=all.filter(x=>x.kind===k).sort((a,b)=>(a.o||0)-(b.o||0)).map(x=>{const{kind,o,id:did,...r}=x;const it={...r,id:did.slice(pre.length),_s:1};if(f==='welcome'&&!it.type)it.type='image';return it});
+    M[f]=Object.fromEntries(got.map(x=>[x.id,sig(x)]));
+    const ids=new Set(got.map(x=>x.id)),mine=S.session===id;
+    const old=c[f]||[];
+    const keepLocal=old.filter(x=>(f==='welcome'&&x.type==='embed')||(mine&&!ids.has(x.id)&&!x._s));
+    if(f==='welcome')c.welcome=[...keepLocal.filter(x=>x.type==='embed'),...got,...keepLocal.filter(x=>x.type!=='embed')];
+    else c[f]=[...got,...keepLocal.filter(x=>!(f==='uploads'&&ids.has(x.id)))];
+  }
 }
 async function pushCel(c){
   const prev=CELSYNC[c.id]||{}; // if never loaded, only add/update (never delete blindly)
-  const now=Object.fromEntries((c.cel||[]).map(x=>[x.id,JSON.stringify(x)]));
-  for(const k in now)if(prev[k]!==now[k]){const{id,...rest}=JSON.parse(now[k]);await setDoc(doc(db,'churches',c.id,'celebrants',k),rest)}
-  for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants',k));
+  const now=Object.fromEntries((c.cel||[]).map(x=>[x.id,celJson(x)]));
+  for(const x of (c.cel||[])){const k=x.id;if(prev[k]===now[k]){x._s=1;continue}const{id,...rest}=JSON.parse(now[k]);try{await setDoc(doc(db,'churches',c.id,'celebrants',k),rest);x._s=1}catch(e){delete now[k];console.error(e)}}
+  for(const k in prev)if(!(k in now))try{await deleteDoc(doc(db,'churches',c.id,'celebrants',k))}catch(e){console.error(e)}
   CELSYNC[c.id]=now;
 }
-async function pushWel(c){
-  const prev=WELSYNC[c.id]; // not loaded yet: only add, never delete
-  const list=(c.welcome||[]).filter(x=>x.type!=='embed'&&x.src);
-  const now={};list.forEach(x=>now[x.id]=(x.cap||'')+'|'+x.src.length);
-  for(let i=0;i<list.length;i++){const x=list[i];if(!prev||prev[x.id]!==now[x.id])await setDoc(doc(db,'churches',c.id,'celebrants','w_'+x.id),{kind:'wel',o:i,cap:x.cap||'',src:x.src})}
-  if(prev)for(const k in prev)if(!(k in now))await deleteDoc(doc(db,'churches',c.id,'celebrants','w_'+k));
-  WELSYNC[c.id]=now;
+async function pushMedia(c){
+  const M=MSYNC[c.id]; // not loaded yet: only add, never delete
+  for(const f in MK){const[k,pre]=MK[f],prev=M&&M[f];
+    const list=(c[f]||[]).filter(x=>bodyOf(x)&&!(f==='welcome'&&x.type==='embed')&&isPublicItem(f,x));
+    const now={};list.forEach(x=>now[x.id]=sig(x));
+    for(let i=0;i<list.length;i++){const x=list[i];if(prev&&prev[x.id]===now[x.id]){x._s=1;continue}
+      const{id,_s,...r}=x,rec={...r,kind:k,o:i};
+      if(JSON.stringify(rec).length>900000){delete now[x.id];continue} // too big for the database: stays on this phone until photo storage is on
+      try{await setDoc(doc(db,'churches',c.id,'celebrants',pre+id),rec);x._s=1}catch(e){delete now[x.id];console.error(e)}}
+    if(prev)for(const id in prev)if(!(id in now))try{await deleteDoc(doc(db,'churches',c.id,'celebrants',pre+id))}catch(e){console.error(e)}
+    if(M)M[f]=now;
+  }
+}
+// ---------- Upload to Cloudflare photo storage (falls back to the old way if it is not switched on) ----------
+const MEDIA={on:null};
+fetch(aiUrl,{cache:'no-store'}).then(r=>r.json()).then(d=>{MEDIA.on=!!d.media}).catch(()=>{MEDIA.on=false});
+const isOurs=u=>typeof u==='string'&&u.startsWith(aiUrl.replace(/\/$/,'')+'/m/');
+async function putMedia(blobOrDataUrl){
+  if(!user||MEDIA.on===false)return null;
+  let blob=blobOrDataUrl;
+  if(typeof blob==='string'){if(!blob.startsWith('data:'))return null;blob=await (await fetch(blob)).blob()}
+  try{
+    const tok=await auth.currentUser.getIdToken();
+    const r=await fetch(aiUrl.replace(/\/$/,'')+'/media',{method:'POST',headers:{'Content-Type':blob.type||'application/octet-stream','Authorization':'Bearer '+tok},body:blob});
+    const d=await r.json().catch(()=>({}));
+    if(d.nomedia){MEDIA.on=false;return null}
+    if(r.ok&&d.url){MEDIA.on=true;return d.url}
+  }catch(e){console.error(e)}
+  return null;
+}
+window.ocMedia={put:putMedia,ready:()=>MEDIA.on};
+function allUrls(c){const u=new Set(),add=v=>{if(isOurs(v))u.add(v)};
+  ['welcome','photos','pics'].forEach(f=>(c[f]||[]).forEach(x=>add(x.src)));(c.uploads||[]).forEach(x=>add(x.data));
+  (c.cel||[]).forEach(x=>{add(x.src);(x.pics||[]).forEach(p=>add(p.src))});return u}
+async function cleanMedia(c){
+  const now=allUrls(c),before=URLSEEN[c.id];URLSEEN[c.id]=now;if(!before||!user)return;
+  const gone=[...before].filter(u=>!now.has(u));if(!gone.length)return;
+  try{const tok=await auth.currentUser.getIdToken();await fetch(aiUrl.replace(/\/$/,'')+'/media/delete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({urls:gone})})}catch(e){console.error(e)}
+}
+// Move photos saved the old way (inside the database) to photo storage, a few at a time.
+async function migrate(c){
+  if(MEDIA.on!==true)return false;let n=0,changed=false;const cap=25;
+  const fix=async(o,key)=>{if(n>=cap||typeof o[key]!=='string'||!o[key].startsWith('data:'))return;n++;const u=await putMedia(o[key]);if(u){o[key]=u;changed=true}};
+  for(const f of ['welcome','photos','pics'])for(const x of (c[f]||[]))await fix(x,'src');
+  for(const x of (c.uploads||[]))await fix(x,'data');
+  for(const x of (c.cel||[])){for(const p of (x.pics||[]))await fix(p,'src');if(x.pics&&x.pics.length)x.src=x.pics[0].src;else await fix(x,'src')}
+  return changed;
 }
 // ---------- Love counts for welcome and celebrant photos (shared by everyone) ----------
 const LOVESEEN=new Set();
@@ -78,10 +135,15 @@ async function loadMine(){
   if(q.empty)return;
   const id=q.docs[0].id;S.session=id;const c=ch(id);
   const p=await getDoc(doc(db,'churches',id,'private','data'));
-  if(p.exists())Object.assign(c,p.data());
+  if(p.exists()){const pd=p.data(),pubUp=(c.uploads||[]).filter(x=>x.vis==='public'||!isOurs(x.data));Object.assign(c,pd);c.uploads=[...pubUp,...((pd.uploads||[]).filter(x=>!pubUp.some(y=>y.id===x.id)))]}
   const ib=await getDocs(collection(db,'churches',id,'inbox'));
   c.inbox=ib.docs.map(d=>({id:d.id,...d.data()}));
-  try{await loadCel(id);CELSEEN.add(id);await pushWel(c)}catch(e){console.error(e)}
+  try{await loadCel(id);CELSEEN.add(id)}catch(e){console.error(e)}
+  URLSEEN[id]=allUrls(c);
+  // wait briefly for the photo-storage check, then tidy up old-style photos and save
+  for(let t=0;t<20&&MEDIA.on===null;t++)await new Promise(r=>setTimeout(r,150));
+  try{if(await migrate(c))_save()}catch(e){console.error(e)}
+  push();
   try{await loadLoves(id);LOVESEEN.add(id)}catch(e){console.error(e)}
 }
 async function push(){
@@ -90,7 +152,8 @@ async function push(){
     await setDoc(doc(db,'churches',c.id),pubOf(c));
     await setDoc(doc(db,'churches',c.id,'private','data'),privOf(c));
     await pushCel(c);
-    await pushWel(c);
+    await pushMedia(c);
+    cleanMedia(c);
   }catch(e){msg='Could not save: '+e.code;console.error(e)}
 }
 
@@ -116,7 +179,9 @@ window.login=()=>`<div class="card"><h1>Sign in</h1>${IN_APP&&!user?'<p class="n
 <p class="note" role="status">${esc(msg||'Sign in to register or manage your church.')}</p></div>`;
 
 // Normal download link now that the page is on its own hosting.
-window.dlUp=async(cid,id)=>{const x=((ch(cid)||{}).uploads||[]).find(u=>u.id===id);if(!x)return;const a=document.createElement('a');a.href=x.data;a.download=x.name;a.click()};
+window.dlUp=async(cid,id)=>{const x=((ch(cid)||{}).uploads||[]).find(u=>u.id===id);if(!x)return;let href=x.data,tmp=false;
+  if(/^https?:/.test(href)){try{href=URL.createObjectURL(await (await fetch(href)).blob());tmp=true}catch(e){window.open(x.data,'_blank','noopener');return}}
+  const a=document.createElement('a');a.href=href;a.download=x.name;document.body.appendChild(a);a.click();a.remove();if(tmp)setTimeout(()=>URL.revokeObjectURL(href),30000)};
 
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-b],[data-a]');if(!b)return;
