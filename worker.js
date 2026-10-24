@@ -1,7 +1,7 @@
 const ALLOWED='https://organizechurch.github.io';
 const cors={'Access-Control-Allow-Origin':ALLOWED,'Access-Control-Allow-Headers':'Content-Type,Authorization','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin','Access-Control-Expose-Headers':'X-OC-Worker,X-OC-Mode,X-OC-Model'};
 const SYS='You are the OrganizeChurch assistant: warm, joyful, bold and full of life, a Spirit-filled friend who loves the Word. You are Christ-centred and fully able to write sermons, messages, devotionals, outlines, prayers, announcements and Bible studies. NEVER say you cannot write a sermon or message: always write it. Style: open with a bold, attention-grabbing line; tell vivid stories and everyday pictures; use short lively paragraphs; add a few fitting emojis (like \ud83d\ude4f \u2728 \ud83d\udcd6 \ud83d\udd25) in chat answers; finish chat answers with a gentle follow-up question. Use plain text only: no asterisks, no markdown symbols, no # headings; for lists use numbers or lines starting with a dash. For a sermon or message, write it complete and ready to preach (about 700 to 1000 words): a title, key Scripture, a strong introduction, three clear points each with a Scripture, an illustration and a practical application, a conclusion, a prayer, and an invitation. For normal questions keep answers under about 200 words. Scripture: quote only the King James Version or the World English Bible, in short quotes with the reference, never NIV, ESV, NLT or other copyrighted versions. Introduce quotes with "Scripture:" and your own explanation with "My thoughts:". Never present answers as divine revelation or prophecy. Be humble about uncertainty and never invent verses. For sensitive matters such as abuse, self-harm, crisis, health or legal problems, respond with compassion and encourage the person to speak with a trusted pastor, a qualified professional or emergency services.';
-// ===== OrganizeChurch AI worker v6 (strong mode) =====
+// ===== OrganizeChurch AI worker v7 (strong mode + photo storage) =====
 // Order: Gemini (fast model) -> another Gemini -> Cloudflare AI (big) -> Cloudflare AI (small).
 // Busy models are skipped for 2 minutes, so later users go straight to one that works.
 // When you move to Gemini's paid plan: in Cloudflare > Settings > Variables, add FIRST_MODEL = gemini-2.5-flash (optional).
@@ -71,16 +71,52 @@ function tooMany(uid,limit){
   if(a.length>=limit){USE.set(uid,a);return true}
   a.push(t);USE.set(uid,a);if(USE.size>5000)USE.clear();return false;
 }
+// ---------- Photo and file storage (Workers KV namespace bound as MEDIA) ----------
+const MTYPES={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','text/plain':'txt','text/markdown':'md','text/csv':'csv'};
+const UPS=new Map(); // uid -> upload times today
+async function serveMedia(req,env,ctx,key){
+  if(!env.MEDIA)return new Response('Not found',{status:404});
+  const cache=caches.default;let hit=await cache.match(req);if(hit)return hit;
+  const o=await env.MEDIA.getWithMetadata(key,{type:'stream'});
+  if(!o||!o.value)return new Response('Not found',{status:404,headers:{'Access-Control-Allow-Origin':'*'}});
+  const t=(o.metadata&&o.metadata.t)||'application/octet-stream',img=/^image\//.test(t);
+  const res=new Response(o.value,{headers:{'Content-Type':t,'Cache-Control':'public, max-age=31536000, immutable','Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff',...(img?{}:{'Content-Disposition':'attachment'})}});
+  ctx.waitUntil(cache.put(req,res.clone()));return res;
+}
 export default{
-async fetch(req,env){
+async fetch(req,env,ctx){
   const j=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{...cors,'Content-Type':'application/json'}});
   if(req.method==='OPTIONS')return new Response(null,{headers:cors});
-  if(req.method!=='POST')return j({ok:true,worker:'v6 strong',backup:!!env.AI,busyNow:Object.keys(HOT).filter(busy)});
+  const path=new URL(req.url).pathname;
+  if(req.method==='GET'&&path.startsWith('/m/'))return serveMedia(req,env,ctx,decodeURIComponent(path.slice(1)));
+  if(req.method!=='POST')return j({ok:true,worker:'v7 strong',backup:!!env.AI,media:!!env.MEDIA,busyNow:Object.keys(HOT).filter(busy)});
   const tok=(req.headers.get('Authorization')||'').replace('Bearer ','');
   if(!tok)return j({error:'Please sign in to use the assistant.'},401);
   const uid=await whoIs(env,tok);
   if(!uid)return j({error:'Please sign in again.'},401);
-  if(new URL(req.url).pathname==='/image'){
+  if(path==='/media'){
+    if(!env.MEDIA)return j({error:'Photo storage is not switched on yet.',nomedia:true},503);
+    if(!uid||uid==='user')return j({error:'Please sign in again.'},401);
+    const t=(req.headers.get('Content-Type')||'').split(';')[0].trim();
+    if(!MTYPES[t])return j({error:'This file type is not allowed.'},415);
+    const buf=await req.arrayBuffer();
+    if(!buf.byteLength)return j({error:'Empty file.'},400);
+    if(buf.byteLength>5*1024*1024)return j({error:'File is too large (5 MB maximum).'},413);
+    const tday=new Date().toISOString().slice(0,10),u=UPS.get(uid)||{d:tday,n:0};if(u.d!==tday){u.d=tday;u.n=0}
+    if(u.n>=Number(env.DAILY_UPLOADS||150))return j({error:'Upload limit reached for today. Please try again tomorrow.'},429);
+    u.n++;UPS.set(uid,u);
+    const key='m/'+uid+'/'+crypto.randomUUID().replace(/-/g,'').slice(0,20)+'.'+MTYPES[t];
+    await env.MEDIA.put(key,buf,{metadata:{t}});
+    return j({url:new URL(req.url).origin+'/'+key});
+  }
+  if(path==='/media/delete'){
+    if(!env.MEDIA)return j({ok:false},503);
+    let b={};try{b=await req.json()}catch(e){}
+    const keys=(Array.isArray(b.urls)?b.urls:[]).slice(0,50).map(x=>{try{return decodeURIComponent(new URL(x).pathname.slice(1))}catch(e){return''}}).filter(k=>k.startsWith('m/'+uid+'/'));
+    for(const k of keys){try{await env.MEDIA.delete(k)}catch(e){}}
+    return j({ok:true,deleted:keys.length});
+  }
+  if(path==='/image'){
     if(!env.AI)return j({error:'The artwork maker is not switched on yet. In Cloudflare, add a Workers AI binding named AI.'},503);
     let b={};try{b=await req.json()}catch(e){}
     const prompt='Beautiful uplifting church flyer background artwork, soft glowing light, rich colours, no text, no letters, no words. '+String(b.prompt||'').trim().slice(0,300);
