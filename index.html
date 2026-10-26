@@ -350,15 +350,15 @@ const ADS=[
 "📖 Read the Bible, take the Bible challenge, get daily declarations, design flyers and manage your church. One free app. One inspired community 👇",
 "🚀 Your ministry deserves a modern home. OrganizeChurch gives you church management tools, creative flyer studio, AI sermon assistant and daily inspiration. Free for early churches 👇"
 ];
-const adLine=k=>ADS[0]+'\n'+APPURL;
-function dayText(kind){
+const adLine=k=>({decl:'📲 Download the free OrganizeChurch app for this daily declaration and more:',verse:'📲 Download the free OrganizeChurch app for this daily verse and more:',art:'📲 Download the free OrganizeChurch app for this daily prophetic word and more:'}[k]||'📲 Download the free OrganizeChurch app:')+'\n'+APPURL;
+function dayText(kind,cta){const ak=cta||kind;
   const v=votd();
-  if(kind==='art'){const a=window.dayArtLine?window.dayArtLine(dayIdx()):[v[0],v[1]];return`🙏 Prophetic Word of the Day\n${a[0]}\n— ${a[1]} (KJV)\n\n${adLine(kind)}`}
-  if(kind==='verse')return`📖 Verse of the Day\n“${v[0]}”\n— ${v[1]} (KJV)\n\n${adLine(kind)}`;
-  return`🔥 Declaration of the Day\n${v[2].join('\n')}\n\n(Based on ${v[1]})\n\n${adLine(kind)}`;
+  if(kind==='art'){const a=window.dayArtLine?window.dayArtLine(dayIdx()):[v[0],v[1]];return`🙏 Prophetic Word of the Day\n${a[0]}\n— ${a[1]} (KJV)\n\n${adLine(ak)}`}
+  if(kind==='verse')return`📖 Verse of the Day\n“${v[0]}”\n— ${v[1]} (KJV)\n\n${adLine(ak)}`;
+  return`🔥 Declaration of the Day\n${v[2].join('\n')}\n\n(Based on ${v[1]})\n\n${adLine(ak)}`;
 }
 // When a picture is shared, its caption is a DIFFERENT piece: prophetic picture -> verse, verse picture -> declaration, declaration picture -> prophetic word
-function capText(kind){return dayText(kind==='art'?'verse':kind==='verse'?'decl':'art')}
+function capText(kind){return dayText(kind==='art'?'verse':kind==='verse'?'decl':'art',kind)}
 function wrapLines(x,text,maxW){const out=[];String(text).split('\n').forEach(par=>{let cur='';par.split(/\s+/).filter(Boolean).forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>maxW&&cur){out.push(cur);cur=w}else cur=t});out.push(cur)});return out}
 function dayCard(kind){
   if(kind==='art'&&window.dayArt)return new Promise(res=>window.dayArt(dayIdx()).toBlob(b=>res(b),'image/png'));
