@@ -360,8 +360,8 @@ function dayCardArt(kind,v){
   g=x.createLinearGradient(rx,0,rx+rw,0);g.addColorStop(0,'#ffd86b');g.addColorStop(1,'#ff7ac8');
   x.save();x.shadowColor='rgba(255,122,200,.55)';x.shadowBlur=26;rr(x,rx,ry,rw,68,34);x.fillStyle=g;x.fill();x.restore();x.fillStyle='#2a0a3a';x.fillText(rt,W/2+2,ry+46);if('letterSpacing' in x)x.letterSpacing='0px';
   // footer
-  x.fillStyle='#fff';x.font='800 31px Arial, Helvetica, sans-serif';x.fillText('Church management + creative inspiration',W/2,H-132);
-  const txt='Get the free app  ·  organizechurch.github.io';x.font='700 30px Arial, Helvetica, sans-serif';x.fillStyle='#ffe9a8';x.fillText(txt,W/2,H-80);
+  x.fillStyle='#fff';x.font='800 26px Arial, Helvetica, sans-serif';x.fillText(isV?'Download the app for this daily verse & more':'Download the app for this daily declaration & more',W/2,H-132);
+  const txt='📲 organizechurch.github.io';x.font='700 30px Arial, Helvetica, sans-serif';x.fillStyle='#ffe9a8';x.fillText(txt,W/2,H-80);
   if(logoReady){x.drawImage(logoImg,70,H-200,92,92);x.drawImage(logoImg,W-162,H-200,92,92)}
   return c;
 }
