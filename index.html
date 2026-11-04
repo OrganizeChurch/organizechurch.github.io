@@ -512,9 +512,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
  finally{b.textContent=old;b.disabled=false}},true);
 setTimeout(()=>{if(window.OC_LOADING===undefined){window.OC_LOADING=false;if(!location.hash||location.hash==='#/')route()}},15000);
 document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('[data-shareall]');if(!b)return;e.preventDefault();const old=b.textContent;b.disabled=true;b.textContent='⏳ Making 3 pictures…';
- const v=votd(),a=window.dayArtLine?window.dayArtLine(dayIdx()):null;
- const text=`🙏 Today's word for you\n\n📖 ${v[1]} (KJV)\n🖼️ Prophetic Word${a?': '+a[0]:''}\n🔥 Declaration of the Day\n\n📲 Download the free OrganizeChurch app for a new verse, prophetic word, declaration and devotional every day:\n${APPURL}`;
- try{const kinds=[['verse','1-verse-of-the-day'],['art','2-prophetic-word'],['decl','3-declaration']],files=[];
+ const d=devo();
+ const tz=(()=>{const p=d[3].split('\n\n')[0],ss=p.match(/[^.!?]+[.!?]+["”]?/g)||[p];let t='';for(const s of ss){if(t&&(t+s).length>220)break;t+=s}return t.trim()+' …'})();
+ const text=`🌅 Daily Devotional: ${d[0]}\n\n${tz}\n\n📲 Read the full devotional and today's prayer free on the OrganizeChurch app:\n${APPURL}/#/devotional`;
+ try{const kinds=[['art','1-prophetic-word'],['verse','2-verse-of-the-day'],['decl','3-declaration']],files=[];
   for(const [k,n] of kinds){const bl=await dayCard(k),bm=await createImageBitmap(bl),cv=document.createElement('canvas');cv.width=bm.width;cv.height=bm.height;const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(bm,0,0);const jb=await new Promise(r=>cv.toBlob(r,'image/jpeg',.9));files.push(new File([jb],n+'.jpg',{type:'image/jpeg'}))}
   if(navigator.canShare&&navigator.canShare({files})){try{await navigator.share({files,text});b.textContent='✓ Shared'}catch(x){if(x&&x.name!=='AbortError')throw x;b.textContent=old}}
   else{for(const f of files){const u=URL.createObjectURL(f),l=document.createElement('a');l.href=u;l.download=f.name;document.body.appendChild(l);l.click();l.remove();await new Promise(r=>setTimeout(r,400))}
