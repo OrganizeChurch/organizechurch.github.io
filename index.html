@@ -527,6 +527,17 @@ document.addEventListener('click',async e=>{const b=e.target.closest&&e.target.c
  try{if(navigator.share){await navigator.share({title:'OrganizeChurch',text:t});return}}catch(x){if(x&&x.name==='AbortError')return}
  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')},true);
 const _hdrS=header;header=function(){_hdrS();setTimeout(()=>{const hd=document.getElementById('hd');if(hd&&!hd.querySelector('[data-shareapp]'))hd.insertAdjacentHTML('beforeend','<button class="sec sm" data-shareapp aria-label="Share this app">📤 Share</button>')},0)};
+// ---------- "Open in Chrome to install" tip, only inside Facebook / WhatsApp / Instagram / TikTok etc. ----------
+(function(){const ua=navigator.userAgent||'';const inApp=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|WhatsApp|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|Line\/|MicroMessenger|; wv\)/i.test(ua);
+ const standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
+ let hidden=false;try{hidden=sessionStorage.getItem('oc_iab_hide')==='1'}catch(e){}
+ if(!inApp||standalone||hidden)return;
+ const ios=/iPhone|iPad|iPod/i.test(ua),app=/WhatsApp/i.test(ua)?'WhatsApp':/Instagram/i.test(ua)?'Instagram':/TikTok|musical_ly|Bytedance/i.test(ua)?'TikTok':/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)?'Facebook':'this app';
+ const d=document.createElement('div');d.id='iabtip';d.setAttribute('role','note');
+ d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:40;background:#0b1238;color:#fff;padding:.85rem max(16px,env(safe-area-inset-right,0px)) calc(.85rem + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -6px 20px rgba(0,0,0,.3);font-size:.95rem;line-height:1.4';
+ d.innerHTML=`<div style="max-width:640px;margin:0 auto;display:flex;gap:.7rem;align-items:flex-start"><span style="font-size:1.6rem;line-height:1">📲</span><div style="flex:1"><b>Want OrganizeChurch on your phone?</b><br>You opened it inside ${app}. Tap <b>⋮</b> (or <b>•••</b>) at the top, choose <b>${ios?'Open in Safari':'Open in Chrome'}</b>, then tap <b>${ios?'Share → Add to Home Screen':'Install app'}</b>.</div><button type="button" aria-label="Close tip" style="background:transparent;border:0;color:#fff;font-size:1.3rem;padding:0 .2rem;cursor:pointer;min-height:0">✕</button></div>`;
+ d.querySelector('button').onclick=()=>{d.remove();try{sessionStorage.setItem('oc_iab_hide','1')}catch(e){}};
+ const add=()=>document.body.appendChild(d);document.body?add():addEventListener('DOMContentLoaded',add)})();
 window.addEventListener('hashchange',route);applyPrefs();route();
 </script><script src="dayart.js?v=12" defer></script><script type="module" src="backend.js?v=12"></script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cf1fcc463d944ad0b8bbdc69fbfc5f24", "spa": true}'></script><!-- End Cloudflare Web Analytics -->
